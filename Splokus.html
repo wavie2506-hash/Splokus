@@ -1,0 +1,1034 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SPLOKUS — Multijoueur</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Space+Mono:wght@400;700&display=swap');
+
+:root {
+  --bg: #08080f;
+  --text: #ddddf5;
+  --muted: #44445a;
+  --cell: 46px;
+  --p1: #ff3060; --p1g: rgba(255,48,96,.6);  --p1d: rgba(255,48,96,.18);
+  --p2: #00e0ff; --p2g: rgba(0,224,255,.6);  --p2d: rgba(0,224,255,.18);
+  --p3: #aaff00; --p3g: rgba(170,255,0,.6);  --p3d: rgba(170,255,0,.18);
+}
+* { box-sizing:border-box; margin:0; padding:0; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Space Mono', monospace;
+  min-height: 100vh;
+  display: flex; flex-direction: column; align-items: center;
+  overflow-x: hidden;
+}
+
+.screen { display:none; flex-direction:column; align-items:center; width:100%; min-height:100vh; padding:20px 8px 40px; }
+.screen.visible { display:flex; }
+
+.logo {
+  font-family:'Bebas Neue',sans-serif;
+  font-size:clamp(42px,7vw,72px);
+  letter-spacing:10px;
+  background:linear-gradient(120deg,var(--p1) 0%,#ff9900 40%,var(--p2) 70%,var(--p3) 100%);
+  -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
+  margin-bottom:2px;
+}
+.subtitle { font-size:9px; letter-spacing:5px; color:var(--muted); text-transform:uppercase; }
+
+/* ══ LOBBY SCREEN ══ */
+#screen-lobby { justify-content:center; gap:20px; }
+.lobby-section { display:flex; flex-direction:column; align-items:center; gap:10px; }
+.lobby-label { font-size:9px; letter-spacing:4px; color:var(--muted); text-transform:uppercase; }
+.setup-btns { display:flex; gap:10px; }
+.setup-btn {
+  font-family:'Bebas Neue',sans-serif; font-size:26px; letter-spacing:3px;
+  padding:8px 28px; border-radius:8px; border:2px solid var(--muted);
+  background:transparent; color:var(--muted); cursor:pointer; transition:all .2s;
+}
+.setup-btn.active, .setup-btn:hover { border-color:var(--text); color:var(--text); background:rgba(255,255,255,.05); }
+
+.primary-btn {
+  font-family:'Bebas Neue',sans-serif; font-size:28px; letter-spacing:5px;
+  padding:12px 44px; border-radius:10px;
+  background:linear-gradient(120deg,var(--p1),var(--p2));
+  border:none; color:#fff; cursor:pointer; transition:all .2s;
+  box-shadow:0 0 24px rgba(255,48,96,.3);
+}
+.primary-btn:hover { transform:scale(1.04); box-shadow:0 0 36px rgba(255,48,96,.5); }
+.primary-btn:disabled { opacity:.4; cursor:default; transform:none; box-shadow:none; }
+
+.or-divider { font-size:9px; letter-spacing:4px; color:var(--muted); }
+
+.join-row { display:flex; gap:8px; align-items:center; }
+.code-input {
+  font-family:'Bebas Neue',sans-serif; font-size:26px; letter-spacing:6px;
+  background:#111120; border:2px solid #2a2a3e; color:var(--text);
+  border-radius:8px; padding:8px 16px; width:160px; text-align:center; text-transform:uppercase;
+  outline:none; transition:border-color .2s;
+}
+.code-input:focus { border-color:var(--p2); }
+.join-btn {
+  font-family:'Bebas Neue',sans-serif; font-size:22px; letter-spacing:3px;
+  padding:10px 22px; border-radius:8px;
+  background:transparent; border:2px solid var(--p2); color:var(--p2);
+  cursor:pointer; transition:all .2s;
+}
+.join-btn:hover { background:var(--p2); color:#000; }
+
+/* ══ WAITING ROOM ══ */
+#screen-waiting { justify-content:center; gap:24px; }
+.room-code-box {
+  display:flex; flex-direction:column; align-items:center; gap:8px;
+  padding:20px 32px; border-radius:12px;
+  border:2px solid #2a2a3e; background:#0e0e1c;
+}
+.room-code-label { font-size:9px; letter-spacing:4px; color:var(--muted); }
+.room-code {
+  font-family:'Bebas Neue',sans-serif; font-size:56px; letter-spacing:14px;
+  background:linear-gradient(120deg,var(--p1),var(--p2));
+  -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
+}
+.share-url {
+  font-size:9px; color:var(--muted); word-break:break-all; text-align:center; max-width:300px; cursor:pointer;
+}
+.share-url:hover { color:var(--text); }
+.copy-btn {
+  font-family:'Space Mono',monospace; font-size:9px; letter-spacing:2px;
+  padding:6px 16px; border-radius:6px; border:1px solid #2a2a3e;
+  background:transparent; color:var(--muted); cursor:pointer; transition:all .2s;
+}
+.copy-btn:hover { border-color:var(--text); color:var(--text); }
+.copy-btn.copied { border-color:var(--p3); color:var(--p3); }
+
+.players-list { display:flex; flex-direction:column; gap:8px; align-items:center; min-width:240px; }
+.player-slot {
+  display:flex; align-items:center; gap:10px;
+  padding:10px 20px; border-radius:8px; border:1px solid #1a1a28;
+  background:#0e0e1c; width:100%; min-width:220px;
+  font-size:11px; letter-spacing:2px;
+}
+.player-slot.filled { border-color:#2a2a3e; }
+.player-slot.ps1.filled { border-color:var(--p1); background:rgba(255,48,96,.06); }
+.player-slot.ps2.filled { border-color:var(--p2); background:rgba(0,224,255,.06); }
+.player-slot.ps3.filled { border-color:var(--p3); background:rgba(170,255,0,.06); }
+.slot-dot { width:10px; height:10px; border-radius:50%; background:#1a1a28; border:1px solid #2a2a3e; }
+.ps1.filled .slot-dot { background:var(--p1); border-color:var(--p1); box-shadow:0 0 6px var(--p1g); }
+.ps2.filled .slot-dot { background:var(--p2); border-color:var(--p2); box-shadow:0 0 6px var(--p2g); }
+.ps3.filled .slot-dot { background:var(--p3); border-color:var(--p3); box-shadow:0 0 6px var(--p3g); }
+.slot-name { flex:1; }
+.ps1 .slot-name { color:var(--p1); }
+.ps2 .slot-name { color:var(--p2); }
+.ps3 .slot-name { color:var(--p3); }
+.slot-you { font-size:8px; color:var(--muted); letter-spacing:1px; }
+.waiting-msg { font-size:9px; letter-spacing:3px; color:var(--muted); animation:blink 1.4s infinite; }
+@keyframes blink { 0%,100%{opacity:.4} 50%{opacity:1} }
+
+/* ══ GAME SCREEN ══ */
+#screen-game { padding-top:16px; gap:0; }
+.game-header {
+  display:flex; align-items:center; justify-content:space-between;
+  width:100%; max-width:520px;
+  padding:10px 16px; border-radius:10px; margin-bottom:8px;
+  border:2px solid transparent; transition:all .3s;
+}
+.game-header[data-p="1"] { background:var(--p1d); border-color:var(--p1); box-shadow:0 0 18px var(--p1g); }
+.game-header[data-p="2"] { background:var(--p2d); border-color:var(--p2); box-shadow:0 0 18px var(--p2g); }
+.game-header[data-p="3"] { background:var(--p3d); border-color:var(--p3); box-shadow:0 0 18px var(--p3g); }
+.gh-left { display:flex; flex-direction:column; gap:2px; }
+.gh-name { font-family:'Bebas Neue',sans-serif; font-size:28px; letter-spacing:4px; }
+.game-header[data-p="1"] .gh-name { color:var(--p1); }
+.game-header[data-p="2"] .gh-name { color:var(--p2); }
+.game-header[data-p="3"] .gh-name { color:var(--p3); }
+.gh-you-badge {
+  font-size:8px; letter-spacing:2px; padding:2px 7px; border-radius:3px;
+  background:rgba(255,255,255,.08); color:var(--muted); width:fit-content;
+}
+.gh-right { text-align:right; }
+.gh-score-lbl { font-size:8px; color:var(--muted); letter-spacing:2px; }
+.gh-score { font-family:'Bebas Neue',sans-serif; font-size:32px; }
+.game-header[data-p="1"] .gh-score { color:var(--p1); }
+.game-header[data-p="2"] .gh-score { color:var(--p2); }
+.game-header[data-p="3"] .gh-score { color:var(--p3); }
+
+.turn-indicator {
+  font-size:9px; letter-spacing:3px; text-align:center;
+  padding:6px 20px; border-radius:20px;
+  margin-bottom:8px; transition:all .3s;
+}
+.turn-indicator.my-turn { background:rgba(255,255,255,.07); color:var(--text); border:1px solid rgba(255,255,255,.15); }
+.turn-indicator.their-turn { background:rgba(255,255,255,.03); color:var(--muted); border:1px solid #1a1a28; }
+.turn-indicator.my-turn::before { content:'▶ '; color:#aaff00; }
+.turn-indicator.their-turn::before { content:'⏳ '; }
+
+.all-scores { display:flex; gap:10px; margin-bottom:8px; flex-wrap:wrap; justify-content:center; }
+.mini-score {
+  font-size:9px; letter-spacing:2px; padding:3px 8px;
+  border-radius:4px; background:rgba(255,255,255,.04); border:1px solid #2a2a3e;
+}
+.mini-score.ms1 { color:var(--p1); border-color:rgba(255,48,96,.3); }
+.mini-score.ms2 { color:var(--p2); border-color:rgba(0,224,255,.3); }
+.mini-score.ms3 { color:var(--p3); border-color:rgba(170,255,0,.3); }
+
+#log { font-size:9px; color:var(--muted); letter-spacing:1px; height:13px; margin-bottom:7px; text-align:center; }
+
+#grid {
+  display:grid;
+  grid-template-columns: repeat(11, var(--cell));
+  grid-template-rows: repeat(11, var(--cell));
+  gap:2px; background:#040406; padding:2px; border-radius:6px; border:1px solid #181825;
+}
+.cell {
+  width:var(--cell); height:var(--cell); border-radius:3px; cursor:pointer;
+  transition:background .15s,transform .1s,box-shadow .18s;
+  display:flex; align-items:center; justify-content:center; user-select:none;
+}
+.cell.dead { background:#0c0c14; border:1px solid #14141e; cursor:default; pointer-events:none; opacity:.3; }
+.cell.empty { background:#1a1a28; border:1px solid #252538; }
+.cell.empty.clickable:hover { background:#222235; transform:scale(1.07); z-index:2; }
+.cell.empty.not-my-turn { cursor:not-allowed; }
+.cell.p1c { background:var(--p1); border:1px solid rgba(255,255,255,.15); box-shadow:0 0 6px var(--p1g); }
+.cell.p2c { background:var(--p2); border:1px solid rgba(255,255,255,.15); box-shadow:0 0 6px var(--p2g); }
+.cell.p3c { background:var(--p3); border:1px solid rgba(255,255,255,.15); box-shadow:0 0 6px var(--p3g); }
+.cell.p1c.clickable:hover,.cell.p2c.clickable:hover,.cell.p3c.clickable:hover { transform:scale(1.07); z-index:2; }
+.cell.blocked { background:#1e1c10!important; border:1px solid #5a5430!important; box-shadow:none!important; cursor:not-allowed!important; pointer-events:none; }
+.cell.blocked::after { content:'⬡'; color:#5a5430; font-size:16px; }
+.cell.locked-final { background:#2b1d1d!important; border:2px solid #ff9900!important; box-shadow:0 0 10px #ff9900!important; }
+.cell.last-played { outline:3px solid rgba(255,255,255,.9); outline-offset:-3px; }
+.cell.flash { animation:cf .35s ease; }
+@keyframes cf { 0%{transform:scale(1.32)} 100%{transform:scale(1)} }
+
+.bonus-wrap { margin-top:12px; width:100%; max-width:520px; }
+.bonus-title-row { font-size:9px; letter-spacing:4px; color:var(--muted); text-align:center; margin-bottom:7px; text-transform:uppercase; }
+.bonus-row { display:flex; gap:8px; justify-content:center; flex-wrap:wrap; }
+.bcard {
+  display:flex; flex-direction:column; align-items:center; gap:4px;
+  padding:8px 12px; border-radius:10px; border:1px solid #222235; background:#0e0e1c;
+  min-width:100px; transition:all .3s; opacity:.35;
+}
+.bcard.locked { opacity:.35; }
+.bcard.ready { opacity:1; border-color:#333348; background:#13132a; }
+.bcard.active-bonus { opacity:1; }
+.bcard.used-bonus { opacity:.2; filter:grayscale(1); }
+.bcard.ab1 { border-color:var(--p1); background:rgba(255,48,96,.07); box-shadow:0 0 12px rgba(255,48,96,.18); }
+.bcard.ab2 { border-color:var(--p2); background:rgba(0,224,255,.07); box-shadow:0 0 12px rgba(0,224,255,.12); }
+.bcard.ab3 { border-color:var(--p3); background:rgba(170,255,0,.07); box-shadow:0 0 12px rgba(170,255,0,.12); }
+.bcard-thresh { font-family:'Bebas Neue',sans-serif; font-size:20px; color:var(--muted); }
+.bcard.ready .bcard-thresh,.bcard.active-bonus .bcard-thresh { color:var(--text); }
+.bcard-name { font-size:8px; letter-spacing:2px; color:var(--muted); text-align:center; text-transform:uppercase; }
+.bcard-dot { width:18px; height:18px; border-radius:50%; border:2px solid #2a2a3e; background:#080810; transition:all .25s; }
+.bcard-dot.lit1 { border-color:var(--p1); background:var(--p1); box-shadow:0 0 6px var(--p1g); }
+.bcard-dot.lit2 { border-color:var(--p2); background:var(--p2); box-shadow:0 0 6px var(--p2g); }
+.bcard-dot.lit3 { border-color:var(--p3); background:var(--p3); box-shadow:0 0 6px var(--p3g); }
+.bcard-dot.used-dot { border-color:#333; background:#1a1a1a; opacity:.3; }
+.bbtn {
+  font-family:'Space Mono',monospace; font-size:9px; letter-spacing:1px;
+  padding:4px 12px; border-radius:4px; border:none; cursor:pointer; transition:all .2s; display:none;
+}
+.bcard.ready .bbtn,.bcard.active-bonus .bbtn { display:block; }
+.bbtn-1 { background:var(--p1); color:#fff; }
+.bbtn-2 { background:var(--p2); color:#000; }
+.bbtn-3 { background:var(--p3); color:#000; }
+.bbtn:hover:not(:disabled) { transform:scale(1.08); }
+.bbtn:disabled { opacity:.3; cursor:default; transform:none!important; }
+.skip-note { font-size:8px; color:#ff9900; letter-spacing:1px; text-align:center; }
+
+.flash-banner {
+  position:fixed; top:50%; left:50%; transform:translate(-50%,-60%);
+  background:rgba(8,8,18,.96); border-radius:10px; padding:16px 30px;
+  font-family:'Bebas Neue',sans-serif; font-size:28px; letter-spacing:4px; text-align:center;
+  z-index:60; pointer-events:none; animation:ba 1.6s forwards; white-space:pre-line;
+}
+@keyframes ba { 0%{opacity:0;transform:translate(-50%,-60%)} 15%{opacity:1;transform:translate(-50%,-50%)} 70%{opacity:1} 100%{opacity:0;transform:translate(-50%,-40%)} }
+
+#screen-end { justify-content:center; gap:20px; }
+.end-title { font-family:'Bebas Neue',sans-serif; font-size:clamp(40px,8vw,72px); letter-spacing:6px; text-align:center; }
+.end-scores { display:flex; flex-direction:column; gap:8px; align-items:center; }
+.end-row {
+  font-family:'Bebas Neue',sans-serif; font-size:24px; letter-spacing:3px;
+  padding:8px 24px; border-radius:8px; border:1px solid #2a2a3e; background:#111120;
+  min-width:200px; text-align:center;
+}
+.end-row.winner { border-width:2px; }
+.end-row.w1 { color:var(--p1); border-color:var(--p1); box-shadow:0 0 14px var(--p1g); }
+.end-row.w2 { color:var(--p2); border-color:var(--p2); box-shadow:0 0 14px var(--p2g); }
+.end-row.w3 { color:var(--p3); border-color:var(--p3); box-shadow:0 0 14px var(--p3g); }
+.restart-btn {
+  font-family:'Space Mono',monospace; font-size:11px; letter-spacing:3px;
+  padding:11px 28px; border-radius:6px; background:transparent;
+  border:2px solid var(--text); color:var(--text); cursor:pointer; transition:all .2s; text-transform:uppercase;
+}
+.restart-btn:hover { background:var(--text); color:var(--bg); }
+
+/* connection status */
+.conn-badge {
+  position:fixed; bottom:12px; right:12px;
+  font-size:8px; letter-spacing:2px; padding:4px 10px;
+  border-radius:4px; background:#0e0e1c; border:1px solid #2a2a3e; color:var(--muted);
+  z-index:50; transition:all .3s;
+}
+.conn-badge.ok { border-color:#aaff0044; color:#aaff00; }
+.conn-badge.err { border-color:#ff306044; color:#ff3060; }
+</style>
+</head>
+<body>
+
+<!-- ══ LOBBY ══ -->
+<div class="screen visible" id="screen-lobby">
+  <div class="logo">SPLOKUS</div>
+  <div class="subtitle" style="margin-bottom:32px">Da ti crkne krava!</div>
+
+  <div class="lobby-section">
+    <div class="lobby-label">Nombre de joueurs</div>
+    <div class="setup-btns">
+      <button class="setup-btn active" id="sb2" onclick="setPC(2)">2 J</button>
+      <button class="setup-btn" id="sb3" onclick="setPC(3)">3 J</button>
+    </div>
+  </div>
+
+  <button class="primary-btn" onclick="createRoom()">CRÉER UNE PARTIE</button>
+
+  <div class="or-divider">— ou rejoindre —</div>
+
+  <div class="join-row">
+    <input class="code-input" id="join-input" placeholder="CODE" maxlength="4" oninput="this.value=this.value.toUpperCase()">
+    <button class="join-btn" onclick="joinRoom()">REJOINDRE</button>
+  </div>
+
+  <div id="lobby-err" style="font-size:9px;color:#ff3060;letter-spacing:2px;height:14px;text-align:center;"></div>
+</div>
+
+<!-- ══ WAITING ROOM ══ -->
+<div class="screen" id="screen-waiting">
+  <div class="logo">SPLOKUS</div>
+  <div class="subtitle" style="margin-bottom:24px">En attente des joueurs</div>
+
+  <div class="room-code-box">
+    <div class="room-code-label">CODE DE LA PARTIE</div>
+    <div class="room-code" id="display-code">----</div>
+    <div class="share-url" id="share-url" onclick="copyLink()">Chargement...</div>
+    <button class="copy-btn" id="copy-btn" onclick="copyLink()">📋 COPIER LE LIEN</button>
+  </div>
+
+  <div class="players-list" id="players-list"></div>
+
+  <div class="waiting-msg" id="waiting-msg">En attente des autres joueurs...</div>
+</div>
+
+<!-- ══ GAME ══ -->
+<div class="screen" id="screen-game">
+  <div class="game-header" id="game-header" data-p="1">
+    <div class="gh-left">
+      <div class="gh-name" id="gh-name">JOUEUR 1</div>
+      <div class="gh-you-badge" id="gh-badge">MON TOUR</div>
+    </div>
+    <div class="gh-right">
+      <div class="gh-score-lbl">MES CASES</div>
+      <div class="gh-score" id="gh-score">0</div>
+    </div>
+  </div>
+
+  <div class="turn-indicator my-turn" id="turn-indicator">C'EST TON TOUR</div>
+
+  <div class="all-scores" id="all-scores"></div>
+  <div id="log">En attente...</div>
+  <div id="grid"></div>
+
+  <div class="bonus-wrap">
+    <div class="bonus-title-row">Mes bonus</div>
+    <div class="bonus-row" id="bonus-row"></div>
+  </div>
+</div>
+
+<!-- ══ END ══ -->
+<div class="screen" id="screen-end">
+  <div class="logo">SPLOKUS</div>
+  <div class="end-title" id="end-title">FIN DE PARTIE</div>
+  <div class="end-scores" id="end-scores"></div>
+  <button class="restart-btn" onclick="goLobby()">REJOUER</button>
+</div>
+
+<div class="conn-badge" id="conn-badge">CONNEXION...</div>
+
+<script>
+// ════════════════════════════════════════
+//  SUPABASE CONFIG
+// ════════════════════════════════════════
+const SUPA_URL = 'https://iscdhcinlqgdrghewkvf.supabase.co';
+const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlzY2RoY2lubHFnZHJnaGV3a3ZmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2MjcyODEsImV4cCI6MjA5MDIwMzI4MX0.4mcIVADp8yodYRlEeRyV8UH7QX2f318uo9h_jE7DN1Y';
+const supabaseClient = window.supabase.createClient(SUPA_URL, SUPA_KEY);
+
+// ════════════════════════════════════════
+//  GAME CONFIG
+// ════════════════════════════════════════
+const GRID=11, SPREAD=5;
+const PNAMES={1:'JOUEUR 1',2:'JOUEUR 2',3:'JOUEUR 3'};
+const PCOL={1:'var(--p1)',2:'var(--p2)',3:'var(--p3)'};
+const BTHR={skip:10,block:20,double:30};
+
+// ════════════════════════════════════════
+//  LOCAL STATE
+// ════════════════════════════════════════
+let numPlayers=2;
+let myPlayerNum=0;     // which player I am (1/2/3)
+let roomId='';         // 4-char code
+let gameOver=false;
+let realtimeSub=null;
+let lastKnownState=null; // to avoid re-renders on own updates
+
+// ════════════════════════════════════════
+//  HELPERS
+// ════════════════════════════════════════
+const idx=(r,c)=>r*GRID+c;
+const dead=(r,c)=>r===0||r===GRID-1||c===0||c===GRID-1;
+function adjCells(r,c,ex){
+  const D=[[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]],out=[];
+  for(const[dr,dc]of D){
+    const nr=r+dr,nc=c+dc;
+    if(nr<0||nr>=GRID||nc<0||nc>=GRID||dead(nr,nc)) continue;
+    if(ex&&ex.has(`${nr},${nc}`)) continue;
+    out.push([nr,nc]);
+  }
+  return out;
+}
+function rnd(arr,n){return[...arr].sort(()=>Math.random()-.5).slice(0,n);}
+function freeCells(cells, ex){
+  const s=new Set((ex||[]).map(([r,c])=>`${r},${c}`)),out=[];
+  for(let r=1;r<GRID-1;r++)for(let c=1;c<GRID-1;c++)
+    if(!s.has(`${r},${c}`)&&!cells[idx(r,c)].blocked) out.push([r,c]);
+  return out;
+}
+function organicSpread(cells, r, c, spread){
+  const captured=[[r,c]];
+  const used=new Set([`${r},${c}`]);
+  while(captured.length<spread){
+    const[sr,sc]=captured[Math.floor(Math.random()*captured.length)];
+    const neighbors=adjCells(sr,sc,used);
+    if(neighbors.length===0) break;
+    const[nr,nc]=neighbors[Math.floor(Math.random()*neighbors.length)];
+    captured.push([nr,nc]);
+    used.add(`${nr},${nc}`);
+  }
+  return captured;
+}
+function generateCode(){
+  const chars='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let code='';
+  for(let i=0;i<4;i++) code+=chars[Math.floor(Math.random()*chars.length)];
+  return code;
+}
+function makeInitialState(nPlayers){
+  const cells=Array.from({length:GRID*GRID},()=>({owner:0,blocked:false,hits:0}));
+  const players={};
+  for(let p=1;p<=nPlayers;p++) players[p]={
+    score:0,empty:0,
+    bonuses:{
+      skip:{u:false,used:false,act:false},
+      block:{u:false,used:false,act:false},
+      double:{u:false,used:false,act:false}
+    }
+  };
+  return {
+    cells,
+    players,
+    numPlayers:nPlayers,
+    turnOrder:Array.from({length:nPlayers},(_,i)=>i+1),
+    turnIdx:0,
+    lastCell:null,
+    lastBy:0,
+    lastLit:[],
+    skipQueue:{},
+    gameOver:false,
+    connectedPlayers:{}
+  };
+}
+
+// ════════════════════════════════════════
+//  SCREEN ROUTING
+// ════════════════════════════════════════
+function showScreen(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('visible'));
+  document.getElementById(id).classList.add('visible');
+  window.scrollTo(0,0);
+}
+function goLobby(){
+  if(realtimeSub){ supabaseClient.removeChannel(realtimeSub); realtimeSub=null; }
+  roomId=''; myPlayerNum=0; gameOver=false; lastKnownState=null;
+  showScreen('screen-lobby');
+}
+
+// ════════════════════════════════════════
+//  LOBBY
+// ════════════════════════════════════════
+function setPC(n){
+  numPlayers=n;
+  document.getElementById('sb2').classList.toggle('active',n===2);
+  document.getElementById('sb3').classList.toggle('active',n===3);
+}
+function setLobbyErr(msg){
+  document.getElementById('lobby-err').textContent=msg;
+  setTimeout(()=>{document.getElementById('lobby-err').textContent='';},3000);
+}
+
+async function createRoom(){
+  setBadge('CONNEXION...','');
+  const code=generateCode();
+  const state=makeInitialState(numPlayers);
+  // Mark player 1 as connected
+  state.connectedPlayers[1]=true;
+
+  const{error}=await supabaseClient.from('rooms').insert({
+    id:code,
+    state,
+    current_player:1,
+    num_players:numPlayers,
+    status:'waiting'
+  });
+  if(error){ setLobbyErr('Erreur réseau – réessaie'); console.error(error); return; }
+
+  // Also insert player record
+  await supabaseClient.from('room_players').insert({room_id:code,player_num:1});
+
+  roomId=code;
+  myPlayerNum=1;
+  setBadge('CONNECTÉ','ok');
+  showWaitingRoom(code, state, numPlayers);
+  subscribeRoom(code);
+}
+
+async function joinRoom(){
+  const code=document.getElementById('join-input').value.trim().toUpperCase();
+  if(code.length!==4){ setLobbyErr('Code à 4 lettres'); return; }
+
+  setBadge('CONNEXION...','');
+  const{data,error}=await supabaseClient.from('rooms').select('*').eq('id',code).single();
+  if(error||!data){ setLobbyErr('Partie introuvable'); return; }
+  if(data.status==='playing'){ setLobbyErr('Partie déjà en cours'); return; }
+  if(data.status==='ended'){ setLobbyErr('Partie terminée'); return; }
+
+  // Find next available player slot
+  const{data:existingPlayers}=await supabaseClient.from('room_players').select('*').eq('room_id',code);
+  const takenNums=new Set((existingPlayers||[]).map(p=>p.player_num));
+  let myNum=0;
+  for(let i=1;i<=data.num_players;i++){ if(!takenNums.has(i)){myNum=i;break;} }
+  if(myNum===0){ setLobbyErr('Partie complète'); return; }
+
+  // Insert player
+  await supabaseClient.from('room_players').insert({room_id:code,player_num:myNum});
+
+  // Update state to mark this player connected
+  const state=data.state;
+  if(!state.connectedPlayers) state.connectedPlayers={};
+  state.connectedPlayers[myNum]=true;
+
+  // If all players joined, start the game
+  const allJoined=takenNums.size+1>=data.num_players;
+  if(allJoined){
+    await supabaseClient.from('rooms').update({state,status:'playing'}).eq('id',code);
+  } else {
+    await supabaseClient.from('rooms').update({state}).eq('id',code);
+  }
+
+  roomId=code;
+  myPlayerNum=myNum;
+  numPlayers=data.num_players;
+  setBadge('CONNECTÉ','ok');
+  showWaitingRoom(code, state, data.num_players);
+  subscribeRoom(code);
+}
+
+// ════════════════════════════════════════
+//  WAITING ROOM UI
+// ════════════════════════════════════════
+function showWaitingRoom(code, state, nPlayers){
+  document.getElementById('display-code').textContent=code;
+  const url=`${location.origin}${location.pathname}?room=${code}`;
+  document.getElementById('share-url').textContent=url;
+  updatePlayersList(state, nPlayers);
+  showScreen('screen-waiting');
+}
+function updatePlayersList(state, nPlayers){
+  const list=document.getElementById('players-list');
+  list.innerHTML='';
+  const connected=state.connectedPlayers||{};
+  for(let p=1;p<=nPlayers;p++){
+    const div=document.createElement('div');
+    const filled=connected[p];
+    div.className=`player-slot ps${p}${filled?' filled':''}`;
+    div.innerHTML=`
+      <div class="slot-dot"></div>
+      <div class="slot-name">${filled?PNAMES[p]:'En attente...'}</div>
+      ${p===myPlayerNum?'<div class="slot-you">← C\'EST TOI</div>':''}
+    `;
+    list.appendChild(div);
+  }
+  const connCount=Object.keys(connected).length;
+  const msg=document.getElementById('waiting-msg');
+  if(connCount>=nPlayers){
+    msg.textContent='Tous les joueurs sont là ! Lancement...';
+    msg.style.color='var(--p3)';
+  } else {
+    msg.textContent=`${connCount}/${nPlayers} joueurs connectés...`;
+    msg.style.color='';
+  }
+}
+function copyLink(){
+  const url=`${location.origin}${location.pathname}?room=${roomId}`;
+  navigator.clipboard.writeText(url).then(()=>{
+    const btn=document.getElementById('copy-btn');
+    btn.textContent='✅ COPIÉ !'; btn.classList.add('copied');
+    setTimeout(()=>{ btn.textContent='📋 COPIER LE LIEN'; btn.classList.remove('copied'); },2000);
+  });
+}
+
+// ════════════════════════════════════════
+//  REALTIME SUBSCRIPTION
+// ════════════════════════════════════════
+function subscribeRoom(code){
+  if(realtimeSub) supabaseClient.removeChannel(realtimeSub);
+  realtimeSub=supabaseClient.channel(`room-${code}`)
+    .on('postgres_changes',{event:'UPDATE',schema:'public',table:'rooms',filter:`id=eq.${code}`},
+      (payload)=>{ onRoomUpdate(payload.new); })
+    .subscribe((status)=>{
+      if(status==='SUBSCRIBED') setBadge('EN DIRECT','ok');
+      else if(status==='CHANNEL_ERROR'||status==='TIMED_OUT') setBadge('HORS LIGNE','err');
+    });
+}
+function onRoomUpdate(row){
+  const state=row.state;
+  if(!state) return;
+  lastKnownState=state;
+
+  // Waiting room update
+  if(row.status==='waiting'){
+    updatePlayersList(state, row.num_players);
+    return;
+  }
+  // Game just started
+  if(row.status==='playing' && document.getElementById('screen-waiting').classList.contains('visible')){
+    numPlayers=row.num_players;
+    startGameScreen(state);
+    return;
+  }
+  // In-game update
+  if(row.status==='playing' || row.status==='ended'){
+    renderGameState(state);
+  }
+}
+
+// ════════════════════════════════════════
+//  START GAME
+// ════════════════════════════════════════
+function startGameScreen(state){
+  buildGrid();
+  renderGameState(state);
+  showScreen('screen-game');
+}
+
+// ════════════════════════════════════════
+//  GRID BUILD
+// ════════════════════════════════════════
+function buildGrid(){
+  const g=document.getElementById('grid'); g.innerHTML='';
+  for(let r=0;r<GRID;r++)for(let c=0;c<GRID;c++){
+    const d=document.createElement('div');
+    d.className='cell'; d.id=`c${r}_${c}`;
+    d.addEventListener('click',()=>onCell(r,c));
+    g.appendChild(d);
+  }
+}
+
+// ════════════════════════════════════════
+//  RENDER STATE
+// ════════════════════════════════════════
+function renderGameState(state){
+  if(!state) return;
+  const cells=state.cells;
+  const currentP=state.turnOrder[state.turnIdx%state.turnOrder.length];
+  const isMyTurn=currentP===myPlayerNum;
+
+  // Header
+  const header=document.getElementById('game-header');
+  header.dataset.p=myPlayerNum;
+  document.getElementById('gh-name').textContent=PNAMES[myPlayerNum];
+  document.getElementById('gh-score').textContent=(state.players[myPlayerNum]||{}).score||0;
+  document.getElementById('gh-badge').textContent=isMyTurn?'MON TOUR':'En attente';
+
+  // Turn indicator
+  const ti=document.getElementById('turn-indicator');
+  if(isMyTurn){
+    ti.className='turn-indicator my-turn';
+    ti.textContent='C\'EST TON TOUR — JOUE !';
+  } else {
+    ti.className='turn-indicator their-turn';
+    ti.textContent=`Tour de ${PNAMES[currentP]}...`;
+  }
+
+  // Mini scores
+  const as=document.getElementById('all-scores'); as.innerHTML='';
+  for(let p=1;p<=state.numPlayers;p++){
+    const d=document.createElement('div');
+    d.className=`mini-score ms${p}`;
+    d.textContent=`${PNAMES[p].replace('JOUEUR ','J')}: ${(state.players[p]||{}).score||0}`;
+    as.appendChild(d);
+  }
+
+  // Grid cells
+  for(let r=0;r<GRID;r++)for(let c=0;c<GRID;c++){
+    const cell=cells[idx(r,c)];
+    const d=document.getElementById(`c${r}_${c}`);
+    if(!d) continue;
+    d.className='cell';
+    if(dead(r,c)){
+      d.classList.add('dead');
+    } else if(cell.blocked){
+      d.classList.add('blocked');
+      if(cell.hits>=4) d.classList.add('locked-final');
+    } else if(cell.owner>0){
+      d.classList.add(`p${cell.owner}c`);
+      if(isMyTurn) d.classList.add('clickable');
+    } else {
+      d.classList.add('empty');
+      if(isMyTurn) d.classList.add('clickable');
+      else d.classList.add('not-my-turn');
+    }
+    if(state.lastCell&&state.lastCell.r===r&&state.lastCell.c===c&&state.lastBy===myPlayerNum) d.classList.add('last-played');
+  }
+
+  // Bonus cards
+  renderBonusCards(state, myPlayerNum, isMyTurn);
+
+  // Log
+  if(!isMyTurn){
+  setLog(`${PNAMES[currentP]} est en train de jouer...`);
+} 
+
+// Détecter si MON tour vient d'être sauté
+if(state.lastSkippedPlayer && state.lastSkippedPlayer===myPlayerNum && !window._skipBannerShown){
+  window._skipBannerShown=true;
+  banner('TON TOUR A ÉTÉ ZAPPÉ ! ⚡','var(--p1)','var(--p1)');
+}
+if(!state.lastSkippedPlayer){
+  window._skipBannerShown=false;
+}
+
+  // Game over
+  if(state.gameOver){ endGame(state); }
+}
+
+// ════════════════════════════════════════
+//  CELL CLICK
+// ════════════════════════════════════════
+async function onCell(r,c){
+  if(gameOver) return;
+  if(!roomId) return;
+  if(dead(r,c)) return;
+
+  // Fetch latest state
+  const{data,error}=await supabaseClient.from('rooms').select('state,status').eq('id',roomId).single();
+  if(error||!data) return;
+  const state=data.state;
+  if(data.status!=='playing') return;
+
+  const currentP=state.turnOrder[state.turnIdx%state.turnOrder.length];
+  if(currentP!==myPlayerNum) return; // not my turn
+
+  const cells=state.cells;
+  const cell=cells[idx(r,c)];
+  if(cell.blocked) return;
+
+  const p=myPlayerNum;
+  const pl=state.players[p];
+  const cellHits=cell.hits;
+  // Bloquer si cette case apparaît dans les numPlayers derniers coups
+const recent = state.recentMoves || [];
+// Bloquer seulement si la case a été jouée numPlayers fois de suite
+const alreadyPlayed = recent.length>=state.numPlayers && recent.every(m=>m.r===r&&m.c===c);
+if(alreadyPlayed){
+  setLog('⛔ Cette case a déjà été jouée ce tour !');
+  return;
+}
+  const stealThreshold = state.numPlayers; // 2 en 2v2, 3 en 3v3
+const isSteal=
+    state.lastCell&&state.lastCell.r===r&&state.lastCell.c===c&&
+    state.lastBy&&state.lastBy!==p&&cellHits<stealThreshold;
+
+  let spread=SPREAD;
+  if(pl.bonuses.double.act){ spread=10; pl.bonuses.double.act=false; pl.bonuses.double.used=true; }
+
+  let captured=[];
+  if(isSteal){
+    const extras=rnd(freeCells(cells, state.lastLit),2);
+    captured=[...state.lastLit,...extras].filter(([tr,tc])=>!dead(tr,tc)&&!cells[idx(tr,tc)].blocked);
+    setLog(`⚡ Vol de territoire + 2 bonus !`);
+  } else {
+    captured=organicSpread(cells, r, c, spread);
+    setLog(`+${captured.length} cases capturées`);
+  }
+
+  // Deduplicate
+  const unique=new Set();
+  captured=captured.filter(([r,c])=>{
+    const key=`${r},${c}`;
+    if(unique.has(key)) return false;
+    unique.add(key); return true;
+  });
+
+  const doBlock=pl.bonuses.block.act;
+  if(doBlock){ pl.bonuses.block.act=false; pl.bonuses.block.used=true; }
+
+  const lit=[];
+  for(const[tr,tc]of captured){
+    if(dead(tr,tc)) continue;
+    const tc2=cells[idx(tr,tc)];
+    if(tc2.blocked){ lit.push([tr,tc]); continue; }
+    const wasE=tc2.owner===0;
+    if(wasE){ tc2.hits=1; } else if(tc2.owner!==p){ tc2.hits++; }
+    tc2.owner=p;
+    if(tc2.hits>=4) tc2.blocked=true;
+    if(wasE) pl.empty++;
+    lit.push([tr,tc]);
+  }
+
+  state.lastLit=lit;
+state.lastCell={r,c};
+state.lastBy=p;
+
+// Historique des derniers coups (taille = numPlayers)
+if(!state.recentMoves) state.recentMoves=[];
+// Si la case jouée est différente, on repart de zéro
+if(state.recentMoves.length>0){
+  const last=state.recentMoves[state.recentMoves.length-1];
+  if(last.r!==r||last.c!==c) state.recentMoves=[];
+}
+state.recentMoves.push({r,c,p});
+
+  // Block bonus
+  if(doBlock){
+    for(const[tr,tc]of lit){
+      const tc2=cells[idx(tr,tc)];
+      if(!tc2.blocked){ tc2.blocked=true; }
+    }
+  }
+
+  // Update scores
+  for(let pp=1;pp<=state.numPlayers;pp++){
+    state.players[pp].score=cells.filter(c2=>c2.owner===pp).length;
+  }
+
+  // Check unlocks
+  for(let pp=1;pp<=state.numPlayers;pp++){
+    const ppl=state.players[pp];
+    if(!ppl.bonuses.skip.u&&ppl.empty>=BTHR.skip) ppl.bonuses.skip.u=true;
+    if(!ppl.bonuses.block.u&&ppl.empty>=BTHR.block) ppl.bonuses.block.u=true;
+    if(!ppl.bonuses.double.u&&ppl.empty>=BTHR.double) ppl.bonuses.double.u=true;
+  }
+
+  state.turnIdx++;
+  let guard=0;
+while(guard<state.numPlayers){
+  const nextP=state.turnOrder[state.turnIdx%state.turnOrder.length];
+  if(state.skipQueue[nextP]){
+    delete state.skipQueue[nextP];
+    state.turnIdx++;
+    guard++;
+  } else {
+    break;
+  }
+}
+
+  // Check game over
+  let empty=0;
+  for(let rr=1;rr<GRID-1;rr++)for(let cc=1;cc<GRID-1;cc++) if(cells[idx(rr,cc)].owner===0) empty++;
+  if(empty===0) state.gameOver=true;
+
+  state.cells=cells;
+
+  // Push to Supabase
+  state.lastSkippedPlayer=null;
+  const newStatus=state.gameOver?'ended':'playing';
+  const{error:upErr}=await supabaseClient.from('rooms')
+    .update({state, current_player:state.turnOrder[state.turnIdx%state.turnOrder.length], status:newStatus})
+    .eq('id',roomId);
+
+  if(upErr){ console.error('Update error',upErr); return; }
+
+  // Render locally immediately (no need to wait for realtime)
+  lastKnownState=state;
+  renderGameState(state);
+  flashLit(lit);
+}
+
+function flashLit(lit){
+  if(!lit) return;
+  lit.forEach(([r,c])=>{
+    const d=document.getElementById(`c${r}_${c}`);
+    if(!d) return;
+    d.classList.remove('flash'); void d.offsetWidth; d.classList.add('flash');
+  });
+}
+
+// ════════════════════════════════════════
+//  BONUS
+// ════════════════════════════════════════
+async function useBlock(){
+  const{data}=await supabaseClient.from('rooms').select('state').eq('id',roomId).single();
+  if(!data) return;
+  const state=data.state;
+  const p=myPlayerNum;
+  if(!state.players[p].bonuses.block.u||state.players[p].bonuses.block.used) return;
+  const currentP=state.turnOrder[state.turnIdx%state.turnOrder.length];
+  if(currentP!==p) return;
+  state.players[p].bonuses.block.act=true;
+  await supabaseClient.from('rooms').update({state}).eq('id',roomId);
+  setLog('🔒 Blocage actif – ce coup verrouille les cases !');
+  renderGameState(state);
+}
+async function useDouble(){
+  const{data}=await supabaseClient.from('rooms').select('state').eq('id',roomId).single();
+  if(!data) return;
+  const state=data.state;
+  const p=myPlayerNum;
+  if(!state.players[p].bonuses.double.u||state.players[p].bonuses.double.used) return;
+  const currentP=state.turnOrder[state.turnIdx%state.turnOrder.length];
+  if(currentP!==p) return;
+  state.players[p].bonuses.double.act=true;
+  await supabaseClient.from('rooms').update({state}).eq('id',roomId);
+  setLog('💥 Double actif – prochain coup = 10 cases !');
+  renderGameState(state);
+}
+async function useSkip(){
+  const{data}=await supabaseClient.from('rooms').select('state').eq('id',roomId).single();
+  if(!data) return;
+  const state=data.state;
+  const p=myPlayerNum;
+  const pb=state.players[p].bonuses.skip;
+  if(!pb.u||pb.used) return;
+  const currentP=state.turnOrder[state.turnIdx%state.turnOrder.length];
+  if(currentP===p) return; // can't skip yourself
+  pb.used=true;
+  // Incrémenter immédiatement le turnIdx pour sauter le tour EN COURS
+state.turnIdx++;
+state.lastSkippedPlayer=currentP;
+// Si par hasard le suivant est aussi skip, gérer la queue
+state.skipQueue=state.skipQueue||{};
+  await supabaseClient.from('rooms').update({state}).eq('id',roomId);
+  banner(`${PNAMES[currentP]}\nTOUR ANNULÉ !`,'var(--text)','var(--p1)');
+  renderGameState(state);
+}
+
+// ════════════════════════════════════════
+//  BONUS CARDS UI
+// ════════════════════════════════════════
+function renderBonusCards(state, p, isMyTurn){
+  const pl=state.players[p];
+  if(!pl) return;
+  const row=document.getElementById('bonus-row'); row.innerHTML='';
+  const currentP=state.turnOrder[state.turnIdx%state.turnOrder.length];
+
+  const meta=[
+    {id:'skip',  thresh:'10+', name:'Zapper un tour',   fn:'useSkip()'},
+    {id:'block', thresh:'20+', name:'Bloquer les cases', fn:'useBlock()'},
+    {id:'double',thresh:'30+', name:'×2 cases (10)',     fn:'useDouble()'}
+  ];
+
+  for(const m of meta){
+    const b=pl.bonuses[m.id];
+    const card=document.createElement('div');
+
+    if(b.used) card.className='bcard used-bonus';
+    else if(b.u) card.className=`bcard ready active-bonus ab${p}`;
+    else card.className='bcard locked';
+
+    let btnHtml='';
+    if(m.id==='skip'){
+      // Skip available when it's NOT your turn
+      const canSkip=b.u&&!b.used&&currentP!==p;
+      if(canSkip){
+        btnHtml=`<button class="bbtn bbtn-${p}" onclick="useSkip()">UTILISER</button>`;
+      } else if(b.u&&!b.used){
+        btnHtml=`<div class="skip-note">⚡ Dispo pendant le tour adverse</div>`;
+      } else {
+        btnHtml=`<div class="skip-note">—</div>`;
+      }
+    } else {
+      const canUse=isMyTurn&&b.u&&!b.used&&!b.act;
+      const disabled=canUse?'':'disabled';
+      const label=b.act?'ACTIF ✓':'UTILISER';
+      btnHtml=`<button class="bbtn bbtn-${p}" onclick="${m.fn}" ${disabled}>${label}</button>`;
+    }
+
+    const dotHtml=`<div class="bcard-dot ${b.u&&!b.used?`lit${p}`:b.used?'used-dot':''}"></div>`;
+    card.innerHTML=`
+      <div class="bcard-thresh">${m.thresh}</div>
+      <div class="bcard-name">${m.name}</div>
+      ${dotHtml}
+      ${btnHtml}
+    `;
+    row.appendChild(card);
+  }
+}
+
+// ════════════════════════════════════════
+//  END GAME
+// ════════════════════════════════════════
+function endGame(state){
+  gameOver=true;
+  const turnOrder=state.turnOrder;
+  let best=0,winner=0,tie=false;
+  for(let p=1;p<=state.numPlayers;p++){
+    const s=(state.players[p]||{}).score||0;
+    if(s>best){best=s;winner=p;tie=false;}
+    else if(s===best&&p!==winner) tie=true;
+  }
+  const title=document.getElementById('end-title');
+  if(tie){title.style.color='#ff9900';title.textContent='ÉGALITÉ !';}
+  else{title.style.color=PCOL[winner];title.textContent=`${PNAMES[winner]} GAGNE !`;}
+  const sc=document.getElementById('end-scores'); sc.innerHTML='';
+  const sorted=turnOrder.slice().sort((a,b)=>(state.players[b]||{score:0}).score-(state.players[a]||{score:0}).score);
+  sorted.forEach((p,i)=>{
+    const d=document.createElement('div');
+    d.className='end-row'+(i===0&&!tie?` winner w${p}`:'');
+    d.style.color=`var(--p${p})`;
+    d.textContent=`${i+1}. ${PNAMES[p]} — ${(state.players[p]||{}).score||0} cases`;
+    sc.appendChild(d);
+  });
+  showScreen('screen-end');
+}
+
+// ════════════════════════════════════════
+//  UI UTILS
+// ════════════════════════════════════════
+function setLog(msg){document.getElementById('log').textContent=msg;}
+function banner(text,textColor,borderColor){
+  const d=document.createElement('div');
+  d.className='flash-banner';
+  d.style.cssText=`color:${textColor||'var(--text)'};border:2px solid ${borderColor||'var(--text)'}`;
+  d.textContent=text;
+  document.body.appendChild(d);
+  setTimeout(()=>d.remove(),1700);
+}
+function setBadge(msg,cls){
+  const b=document.getElementById('conn-badge');
+  b.textContent=msg; b.className='conn-badge'+(cls?` ${cls}`:'');
+}
+
+// ════════════════════════════════════════
+//  AUTO-JOIN FROM URL PARAM
+// ════════════════════════════════════════
+window.addEventListener('load',()=>{
+  const params=new URLSearchParams(location.search);
+  const roomParam=params.get('room');
+  if(roomParam){
+    document.getElementById('join-input').value=roomParam.toUpperCase();
+    // Auto-trigger join after a tiny delay
+    setTimeout(()=>joinRoom(),300);
+  }
+});
+</script>
+</body>
+</html>
