@@ -935,7 +935,7 @@ let trapTriggered=false;
 let trapMsg='';
 for(const[ownerStr, trap] of Object.entries(traps)){
   const owner=parseInt(ownerStr);
- const triggered=captured.some(([tr,tc])=>Number(tr)===Number(trap.r)&&Number(tc)===Number(trap.c));
+ const triggered=Number(r)===Number(trap.r)&&Number(c)===Number(trap.c);
   if(!triggered) continue;
   trapTriggered=true;
   if(owner===p){
