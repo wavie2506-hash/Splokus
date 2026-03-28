@@ -450,10 +450,11 @@ function freeCells(cells, ex){
     if(!s.has(`${r},${c}`)&&!cells[idx(r,c)].blocked) out.push([r,c]);
   return out;
 }
-function organicSpread(cells, r, c, spread){
+function organicSpread(cells, r, c, spread, trapCells=[]){
+  const trapSet=new Set(trapCells.map(([tr,tc])=>`${tr},${tc}`));
   const captured=[[r,c]];
   const used=new Set([`${r},${c}`]);
-  let slots=spread-1; // cases restantes à capturer
+  let slots=spread-1;
   let attempts=0;
   while(slots>0 && attempts<100){
     attempts++;
@@ -465,11 +466,9 @@ function organicSpread(cells, r, c, spread){
       if(nr<0||nr>=GRID||nc<0||nc>=GRID) continue;
       if(used.has(`${nr},${nc}`)) continue;
       used.add(`${nr},${nc}`);
-      if(dead(nr,nc)){
-        slots--; // case morte = slot perdu, pas de compensation
-        break;
-      }
+      if(dead(nr,nc)){ slots--; break; }
       if(cells[idx(nr,nc)].blocked) continue;
+      if(trapSet.has(`${nr},${nc}`)) continue;
       captured.push([nr,nc]);
       slots--;
       break;
@@ -889,7 +888,7 @@ window._trapMsgShown=null;
   const cellHits=cell.hits;
 
   const recent=state.recentMoves||[];
-  const alreadyPlayed=recent.length>=state.numPlayers&&recent.every(m=>m.r===r&&m.c===c);
+  const alreadyPlayed=recentlength>=state.numPlayers&&recent.every(m=>m.r===r&&m.c===c);
   if(alreadyPlayed){
     setLog('⛔ Cette case a déjà été jouée ce tour !');
     return;
@@ -909,7 +908,8 @@ const isSteal=
     captured=[...state.lastLit,...extras].filter(([tr,tc])=>!dead(tr,tc)&&!cells[idx(tr,tc)].blocked);
     setLog(`⚡ Vol de territoire + 2 bonus !`);
   } else {
-    captured=organicSpread(cells, r, c, spread);
+    const trapCells=Object.values(state.traps||{}).map(t=>[Number(t.r),Number(t.c)]);
+captured=organicSpread(cells, r, c, spread, trapCells);;
     setLog(`+${captured.length} cases capturées`);
   }
 
