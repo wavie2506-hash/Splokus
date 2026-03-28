@@ -633,21 +633,39 @@ function onRoomUpdate(row){
     return;
   }
   // Game just started
-  if(row.status==='playing'){
-  numPlayers=row.num_players;
-  const onWaiting=document.getElementById('screen-waiting').classList.contains('visible');
-  const onTrap=document.getElementById('screen-trap').classList.contains('visible');
-  const onPass=document.getElementById('screen-pass').classList.contains('visible');
+  // Game just started or updated
+if (row.status === 'playing' || row.status === 'ended') {
+  numPlayers = row.num_players || numPlayers; // toujours synchroniser
 
-  // Si les pièges sont déjà configurés, lancer le jeu pour tout le monde
-  if(state.traps && Object.keys(state.traps).length>=numPlayers){
-    if(!document.getElementById('screen-game').classList.contains('visible')){
+  const hasAllTraps = state.traps && Object.keys(state.traps).length >= numPlayers;
+
+  if (hasAllTraps) {
+    // On passe directement au jeu si les pièges sont prêts
+    if (!document.getElementById('screen-game').classList.contains('visible') &&
+        !document.getElementById('screen-end').classList.contains('visible')) {
       startGameScreen(state);
     } else {
       renderGameState(state);
     }
-    return;
+  } else {
+    // Pièges pas encore tous posés → mode configuration
+    const currentlyWaiting = document.getElementById('screen-waiting').classList.contains('visible');
+
+    if (currentlyWaiting) {
+      if (myPlayerNum === 1) {
+        startTrapSetup(state);
+      } else {
+        const msg = document.getElementById('waiting-msg');
+        msg.textContent = '⏳ En attente de la configuration des pièges...';
+        msg.style.color = 'var(--p2)';
+      }
+    } else if (myPlayerNum === 1 && document.getElementById('screen-trap').classList.contains('visible')) {
+      // Si J1 est déjà en train de poser et qu’un update arrive
+      renderGameState(state); // ou rien, selon besoin
+    }
   }
+  return;
+}
   // Sinon, J1 configure les pièges, les autres attendent
   if(onWaiting){
     if(myPlayerNum===1){
