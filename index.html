@@ -319,64 +319,6 @@ body {
   <div class="waiting-msg" id="waiting-msg">En attente des autres joueurs...</div>
 </div>
 
-  // ══ TRAP SETUP ══
-let trapConfirmed=false;
-
-function startTrapSetup(state){
-  trapConfirmed=false;
-  const p=myPlayerNum;
-  const title=document.getElementById('trap-title');
-  title.textContent=PNAMES[p];
-  title.style.color=`var(--p${p})`;
-  buildTrapGrid(p);
-  document.getElementById('trap-status').textContent='Clique une case pour poser ton piège';
-  showScreen('screen-trap');
-}
-
-function buildTrapGrid(p){
-  const g=document.getElementById('trap-grid'); g.innerHTML='';
-  for(let r=0;r<GRID;r++)for(let c=0;c<GRID;c++){
-    const d=document.createElement('div');
-    d.className='cell';
-    if(dead(r,c)){
-      d.classList.add('dead');
-    } else {
-      d.classList.add('empty');
-      d.style.cursor='crosshair';
-      d.addEventListener('click',()=>onTrapCell(r,c,p));
-    }
-    g.appendChild(d);
-  }
-}
-
-function onTrapCell(r,c,p){
-  if(trapConfirmed) return;
-  const g=document.getElementById('trap-grid');
-  // Reset outline
-  g.querySelectorAll('.cell').forEach(el=>{ el.style.outline=''; el.style.outlineOffset=''; });
-  const cellEl=g.children[r*GRID+c];
-  cellEl.style.outline=`3px solid var(--p${p})`;
-  cellEl.style.outlineOffset='-3px';
-  document.getElementById('trap-status').textContent=`Case sélectionnée — reclique pour confirmer !`;
-  cellEl.addEventListener('click', async ()=>{
-    if(trapConfirmed) return;
-    trapConfirmed=true;
-    document.getElementById('trap-status').textContent='✅ Piège posé ! En attente des autres joueurs...';
-    // Désactiver la grille
-    g.querySelectorAll('.cell').forEach(el=>{ el.style.pointerEvents='none'; });
-    // Sauvegarder dans Supabase
-    const{data}=await supabaseClient.from('rooms').select('state').eq('id',roomId).single();
-    if(!data) return;
-    const state=data.state;
-    if(!state.traps) state.traps={};
-    state.traps[p]={r,c};
-    await supabaseClient.from('rooms').update({state}).eq('id',roomId);
-    // Si tout le monde a posé son piège → lancer
-    if(Object.keys(state.traps).length>=state.numPlayers){
-      startGameScreen(state);
-    }
-  },{once:true});
-}
   <!-- ══ TRAP SCREEN ══ -->
 <div class="screen" id="screen-trap">
   <div class="logo">SPLOKUS</div>
@@ -710,34 +652,14 @@ if (row.status === 'playing' || row.status === 'ended') {
     const currentlyWaiting = document.getElementById('screen-waiting').classList.contains('visible');
 
     if (currentlyWaiting) {
-      if (myPlayerNum === 1) {
-        startTrapSetup(state);
-      } else {
-        const msg = document.getElementById('waiting-msg');
-        msg.textContent = '⏳ En attente de la configuration des pièges...';
-        msg.style.color = 'var(--p2)';
-      }
+  startTrapSetup(state);
+}
     } else if (myPlayerNum === 1 && document.getElementById('screen-trap').classList.contains('visible')) {
       // Si J1 est déjà en train de poser et qu’un update arrive
       renderGameState(state); // ou rien, selon besoin
     }
   }
   return;
-}
-  // Sinon, J1 configure les pièges, les autres attendent
-  if(onWaiting){
-    if(myPlayerNum===1){
-      startTrapSetup(state);
-    } else {
-      document.getElementById('waiting-msg').textContent='⏳ En attente de la configuration...';
-    }
-  }
-  return;
-}
-  // In-game update
-  if(row.status==='playing' || row.status==='ended'){
-    renderGameState(state);
-  }
 }
 
 // ════════════════════════════════════════
