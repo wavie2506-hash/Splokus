@@ -29,7 +29,7 @@ body {
 /* Bloquer le scroll et adapter à l'écran */
 html, body {
   overflow: hidden;
-  height: 100%;
+  height: 100dvh;
   width: 100%;
   position: fixed;
 }
@@ -38,10 +38,11 @@ html, body {
   flex-direction: column;
   align-items: center;
   width: 100%;
-  height: 100%;
-  padding: 20px 8px 40px;
+  height: 100dvh;
+  padding: 8px;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
+  gap: 6px;
 }
 .screen.visible { display: flex; }
 
@@ -340,7 +341,7 @@ html, body {
   <div class="pass-title" style="font-family:'Bebas Neue',sans-serif;font-size:48px;letter-spacing:6px;text-align:center;" id="trap-title">JOUEUR 1</div>
   <div style="font-size:9px;letter-spacing:4px;color:var(--muted);text-align:center;margin-bottom:16px;">CHOISIS TA CASE PIÈGE — MÉMORISE-LA BIEN</div>
   <div style="font-size:9px;letter-spacing:2px;color:#ff9900;text-align:center;margin-bottom:12px;">⚠️ Adversaire touche → +5 pts pour toi · Tu la touches → -7 pts</div>
-  <div id="trap-grid" style="display:grid;grid-template-columns:repeat(11,var(--cell));grid-template-rows:repeat(11,var(--cell));gap:2px;background:#040406;padding:2px;border-radius:6px;border:1px solid #181825;"></div>
+  <div id="trap-grid" style="display:grid;grid-template-columns:repeat(11,var(--cell));grid-template-rows:repeat(11,var(--cell));gap:min(2px,0.3vw);background:#040406;padding:2px;border-radius:6px;border:1px solid #181825;"></div>
   <div style="font-size:9px;letter-spacing:3px;color:var(--muted);margin-top:12px;" id="trap-status">Clique une case pour la poser</div>
 </div>
 <!-- ══ GAME ══ -->
