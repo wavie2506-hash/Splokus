@@ -410,15 +410,22 @@ function organicSpread(cells, r, c, spread){
     attempts++;
     const[sr,sc]=captured[Math.floor(Math.random()*captured.length)];
     const D=[[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]];
-    const shuffled=D.sort(()=>Math.random()-.5);
+    const shuffled=[...D].sort(()=>Math.random()-.5);
+    let placed=false;
     for(const[dr,dc]of shuffled){
       const nr=sr+dr, nc=sc+dc;
       if(nr<0||nr>=GRID||nc<0||nc>=GRID) continue;
       if(used.has(`${nr},${nc}`)) continue;
-      if(dead(nr,nc)){ used.add(`${nr},${nc}`); continue; }
+      used.add(`${nr},${nc}`);
+      if(dead(nr,nc)){
+        // Case morte : compte comme une tentative ratée, réduit le spread effectif
+        spread--;
+        placed=true;
+        break;
+      }
       if(cells[idx(nr,nc)].blocked) continue;
       captured.push([nr,nc]);
-      used.add(`${nr},${nc}`);
+      placed=true;
       break;
     }
   }
