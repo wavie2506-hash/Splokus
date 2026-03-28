@@ -847,13 +847,16 @@ if(state.lastTrapMsg && state.lastTrapMsg!==window._trapMsgShown){
   setLog(`${PNAMES[currentP]} est en train de jouer...`);
 } 
 
-// Détecter si MON tour vient d'être sauté
-if(state.lastSkippedPlayer && state.lastSkippedPlayer===myPlayerNum && !window._skipBannerShown){
-  window._skipBannerShown=true;
-  banner('TON TOUR A ÉTÉ ZAPPÉ ! ⚡','var(--p1)','var(--p1)');
+if(state.lastSkippedPlayer && state.lastSkippedPlayer!==window._skipBannerShown){
+  window._skipBannerShown=state.lastSkippedPlayer;
+  if(state.lastSkippedPlayer===myPlayerNum){
+    banner('TON TOUR A ÉTÉ ZAPPÉ ! ⚡','var(--p1)','var(--p1)');
+  } else {
+    banner(`${PNAMES[state.lastSkippedPlayer]}\nA ÉTÉ ZAPPÉ ! ⚡`,'var(--text)','var(--p2)');
+  }
 }
 if(!state.lastSkippedPlayer){
-  window._skipBannerShown=false;
+  window._skipBannerShown=null;
 }
 
   // Game over
