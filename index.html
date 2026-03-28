@@ -928,6 +928,7 @@ console.log('traps:', state.traps);
   console.log('captured:', captured.map(([r,c])=>`${r},${c}`));
 console.log('traps:', state.traps);
 console.log('trap details:', JSON.stringify(state.traps));
+  console.log('trap p1:', state.traps[1], 'trap p2:', state.traps[2]);
 // Vérifier les pièges AVANT d'appliquer
 const traps=state.traps||{};
 let trapTriggered=false;
