@@ -563,7 +563,9 @@ if(data.status==='playing'&&hasAllTraps){ setLobbyErr('Partie déjà en cours');
   numPlayers=data.num_players;
   setBadge('CONNECTÉ','ok');
   showWaitingRoom(code, state, data.num_players);
-  subscribeRoom(code);
+subscribeRoom(code);
+if(allJoined){
+  setTimeout(()=>startTrapSetup(state), 300);
 }
 
 // ════════════════════════════════════════
