@@ -405,27 +405,25 @@ function freeCells(cells, ex){
 function organicSpread(cells, r, c, spread){
   const captured=[[r,c]];
   const used=new Set([`${r},${c}`]);
+  let slots=spread-1; // cases restantes à capturer
   let attempts=0;
-  while(captured.length<spread && attempts<100){
+  while(slots>0 && attempts<100){
     attempts++;
     const[sr,sc]=captured[Math.floor(Math.random()*captured.length)];
     const D=[[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]];
     const shuffled=[...D].sort(()=>Math.random()-.5);
-    let placed=false;
     for(const[dr,dc]of shuffled){
       const nr=sr+dr, nc=sc+dc;
       if(nr<0||nr>=GRID||nc<0||nc>=GRID) continue;
       if(used.has(`${nr},${nc}`)) continue;
       used.add(`${nr},${nc}`);
       if(dead(nr,nc)){
-        // Case morte : compte comme une tentative ratée, réduit le spread effectif
-        spread--;
-        placed=true;
+        slots--; // case morte = slot perdu, pas de compensation
         break;
       }
       if(cells[idx(nr,nc)].blocked) continue;
       captured.push([nr,nc]);
-      placed=true;
+      slots--;
       break;
     }
   }
