@@ -888,7 +888,7 @@ window._trapMsgShown=null;
   const cellHits=cell.hits;
 
   const recent=state.recentMoves||[];
-  const alreadyPlayed=recentlength>=state.numPlayers&&recent.every(m=>m.r===r&&m.c===c);
+  const alreadyPlayed=recent.length>=state.numPlayers&&recent.every(m=>m.r===r&&m.c===c);
   if(alreadyPlayed){
     setLog('⛔ Cette case a déjà été jouée ce tour !');
     return;
