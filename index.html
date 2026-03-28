@@ -780,11 +780,18 @@ function renderGameState(state){
   const cells=state.cells;
   const currentP=state.turnOrder[state.turnIdx%state.turnOrder.length];
   const isMyTurn=currentP===myPlayerNum;
-if(state.lastTrapMsg && !window._trapMsgShown){
+if(state.lastTrapMsg && state.lastTrapMsg!==window._trapMsgShown){
   window._trapMsgShown=state.lastTrapMsg;
   banner(state.lastTrapMsg, 'var(--text)', '#ff9900');
+  // Remettre à null après affichage
+  setTimeout(async()=>{
+    const{data}=await supabaseClient.from('rooms').select('state').eq('id',roomId).single();
+    if(!data) return;
+    const s=data.state;
+    s.lastTrapMsg=null;
+    await supabaseClient.from('rooms').update({state:s}).eq('id',roomId);
+  }, 500);
 }
-if(!state.lastTrapMsg) window._trapMsgShown=null;
   // Header
   const header=document.getElementById('game-header');
   header.dataset.p=myPlayerNum;
@@ -865,8 +872,9 @@ async function onCell(r,c){
   const{data,error}=await supabaseClient.from('rooms').select('state,status').eq('id',roomId).single();
   if(error||!data) return;
   const state=data.state;
-  state.lastTrapMsg=null;
-  state.lastSkippedPlayer=null;
+state.lastTrapMsg=null;
+state.lastSkippedPlayer=null;
+window._trapMsgShown=null;
 
   const currentP=state.turnOrder[state.turnIdx%state.turnOrder.length];
   if(currentP!==myPlayerNum) return;
