@@ -864,8 +864,19 @@ async function onCell(r,c){
   // Fetch latest state
 const{data,error}=await supabaseClient.from('rooms').select('state,status').eq('id',roomId).single();
 if(error||!data) return;
-const state=data.state;
-state.lastTrapMsg=null;
+if(trapTriggered){
+  state.lastTrapMsg=trapMsg;
+  window._trapMsgShown=null; // forcer l'affichage
+  state.cells=cells;
+  const newStatus=state.gameOver?'ended':'playing';
+  await supabaseClient.from('rooms')
+    .update({state, current_player:state.turnOrder[state.turnIdx%state.turnOrder.length], status:newStatus})
+    .eq('id',roomId);
+  lastKnownState=state;
+  banner(trapMsg, 'var(--text)', '#ff9900'); // afficher directement
+  renderGameState(state);
+  return;
+}
 
   const currentP=state.turnOrder[state.turnIdx%state.turnOrder.length];
   if(currentP!==myPlayerNum) return; // not my turn
