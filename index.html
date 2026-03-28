@@ -915,24 +915,65 @@ const isSteal=
   const doBlock=pl.bonuses.block.act;
   if(doBlock){ pl.bonuses.block.act=false; pl.bonuses.block.used=true; }
 
-  const lit=[];
-  for(const[tr,tc]of captured){
-    if(dead(tr,tc)) continue;
-    const tc2=cells[idx(tr,tc)];
-    if(tc2.blocked){ lit.push([tr,tc]); continue; }
-    const wasE=tc2.owner===0;
-if(wasE){
-  tc2.hits=1;
-} else if(tc2.owner!==p){
-  tc2.hits++;
-} else {
-  // Même joueur retouche = pas d'incrément
-}
-tc2.owner=p;
-if(tc2.hits>=4) tc2.blocked=true;
+  // Vérifier les pièges AVANT d'appliquer
+const traps=state.traps||{};
+let trapTriggered=false;
+let trapMsg='';
+for(const[ownerStr, trap] of Object.entries(traps)){
+  const owner=parseInt(ownerStr);
+  const triggered=captured.some(([tr,tc])=>tr===trap.r&&tc===trap.c);
+  if(!triggered) continue;
+  trapTriggered=true;
+  if(owner===p){
+    state.players[p].score=Math.max(0, state.players[p].score-7);
+    trapMsg=`💀 ${PNAMES[p]} A TOUCHÉ SON PROPRE PIÈGE !\n-7 pts`;
+  } else {
+    state.players[owner].score+=5;
+    trapMsg=`⚡ ${PNAMES[p]} A DÉCLENCHÉ LE PIÈGE\nDE ${PNAMES[owner]} !\n+5 pts pour ${PNAMES[owner]}`;
   }
+}
 
-  state.lastLit=lit;
+// Si piège déclenché → annuler le coup
+if(trapTriggered){
+  state.lastTrapMsg=trapMsg;
+  state.turnIdx++;
+  let guard=0;
+  while(guard<state.numPlayers){
+    const nextP=state.turnOrder[state.turnIdx%state.turnOrder.length];
+    if(state.skipQueue[nextP]){
+      delete state.skipQueue[nextP];
+      state.turnIdx++;
+      guard++;
+    } else { break; }
+  }
+  state.lastSkippedPlayer=null;
+  state.cells=cells;
+  const newStatus=state.gameOver?'ended':'playing';
+  await supabaseClient.from('rooms')
+    .update({state, current_player:state.turnOrder[state.turnIdx%state.turnOrder.length], status:newStatus})
+    .eq('id',roomId);
+  renderGameState(state);
+  return;
+}
+
+const lit=[];
+for(const[tr,tc]of captured){
+  if(dead(tr,tc)) continue;
+  const tc2=cells[idx(tr,tc)];
+  if(tc2.blocked){ lit.push([tr,tc]); continue; }
+  const wasE=tc2.owner===0;
+  if(wasE){
+    tc2.hits=1;
+  } else if(tc2.owner!==p){
+    tc2.hits++;
+  }
+  tc2.owner=p;
+  if(tc2.hits>=4) tc2.blocked=true;
+  if(wasE) pl.empty++;
+  lit.push([tr,tc]);
+}
+
+state.lastLit=lit;
 state.lastCell={r,c};
 state.lastBy=p;
 
@@ -958,20 +999,6 @@ state.recentMoves.push({r,c,p});
     state.players[pp].score=cells.filter(c2=>c2.owner===pp).length;
   }
 // ══ VÉRIF PIÈGES ══
-// ══ VÉRIF PIÈGES ══
-const traps=state.traps||{};
-for(const[ownerStr, trap] of Object.entries(traps)){
-  const owner=parseInt(ownerStr);
-  const triggered=captured.some(([tr,tc])=>tr===trap.r&&tc===trap.c);
-  if(!triggered) continue;
-  if(owner===p){
-    state.players[p].score=Math.max(0, state.players[p].score-7);
-    state.lastTrapMsg=`💀 ${PNAMES[p]} A TOUCHÉ SON PROPRE PIÈGE !\n-7 pts`;
-  } else {
-    state.players[owner].score+=5;
-    state.lastTrapMsg=`⚡ ${PNAMES[p]} A DÉCLENCHÉ LE PIÈGE\nDE ${PNAMES[owner]} !\n+5 pts pour ${PNAMES[owner]}`;
-  }
-}
   // Check unlocks
   for(let pp=1;pp<=state.numPlayers;pp++){
     const ppl=state.players[pp];
