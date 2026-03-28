@@ -665,7 +665,11 @@ function startGameScreen(state){
   showScreen('screen-game');
 }
 // ══ TRAP SETUP ══
+// ══ TRAP SETUP ══
+let trapConfirmed=false;
 
+function buildTrapGrid(p){
+  
 function buildTrapGrid(p){
   const g=document.getElementById('trap-grid'); g.innerHTML='';
   for(let r=0;r<GRID;r++)for(let c=0;c<GRID;c++){
