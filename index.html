@@ -691,8 +691,6 @@ function startTrapSetup(state){
   showScreen('screen-trap');
 }
   
-let trapConfirmed=false;
-
 function onTrapCell(r,c,p){
   if(trapConfirmed) return;
   const g=document.getElementById('trap-grid');
