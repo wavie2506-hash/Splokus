@@ -952,8 +952,10 @@ if(trapTriggered){
   await supabaseClient.from('rooms')
     .update({state, current_player:state.turnOrder[state.turnIdx%state.turnOrder.length], status:newStatus})
     .eq('id',roomId);
-  renderGameState(state);
-  return;
+  lastKnownState=state;
+renderGameState(state);
+flashLit([]);
+return;
 }
 
 const lit=[];
@@ -998,7 +1000,7 @@ state.recentMoves.push({r,c,p});
   for(let pp=1;pp<=state.numPlayers;pp++){
     state.players[pp].score=cells.filter(c2=>c2.owner===pp).length;
   }
-// ══ VÉRIF PIÈGES ══
+
   // Check unlocks
   for(let pp=1;pp<=state.numPlayers;pp++){
     const ppl=state.players[pp];
