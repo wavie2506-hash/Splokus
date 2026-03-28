@@ -671,31 +671,7 @@ function startGameScreen(state){
   showScreen('screen-game');
 }
 // ══ TRAP SETUP ══
-let trapSetupIdx=0;
-let trapSetupOrder=[];
-let trapSelections={};
-
-function startTrapSetup(state){
-  trapSetupIdx=0;
-  trapSetupOrder=[...state.turnOrder];
-  trapSelections={};
-  showTrapScreen();
-}
-
-function showTrapScreen(){
-  if(trapSetupIdx>=trapSetupOrder.length){
-    // Tous ont choisi → sauvegarder et lancer
-    finalizeTrapSetup();
-    return;
-  }
-  const p=trapSetupOrder[trapSetupIdx];
-  const title=document.getElementById('trap-title');
-  title.textContent=PNAMES[p];
-  title.style.color=`var(--p${p})`;
-  buildTrapGrid(p);
-  document.getElementById('trap-status').textContent='Clique une case pour la poser';
-  showScreen('screen-trap');
-}
+=
 
 function buildTrapGrid(p){
   const g=document.getElementById('trap-grid'); g.innerHTML='';
@@ -712,53 +688,44 @@ function buildTrapGrid(p){
     g.appendChild(d);
   }
 }
-
+function startTrapSetup(state){
+  trapConfirmed=false;
+  const p=myPlayerNum;
+  const title=document.getElementById('trap-title');
+  title.textContent=PNAMES[p];
+  title.style.color=`var(--p${p})`;
+  buildTrapGrid(p);
+  document.getElementById('trap-status').textContent='Clique une case pour poser ton piège';
+  showScreen('screen-trap');
+}
+  
 let trapConfirmed=false;
+
 function onTrapCell(r,c,p){
   if(trapConfirmed) return;
-  // Highlight la case choisie
   const g=document.getElementById('trap-grid');
-  g.querySelectorAll('.cell').forEach(el=>el.style.outline='');
+  g.querySelectorAll('.cell').forEach(el=>{ el.style.outline=''; el.style.outlineOffset=''; });
   const cellEl=g.children[r*GRID+c];
   cellEl.style.outline=`3px solid var(--p${p})`;
   cellEl.style.outlineOffset='-3px';
-  document.getElementById('trap-status').textContent=`Case (${r},${c}) sélectionnée — confirme en recliquant !`;
-  // Deuxième clic = confirmation
-  cellEl.addEventListener('click', ()=>{
-    trapSelections[p]={r,c};
+  document.getElementById('trap-status').textContent='Case sélectionnée — reclique pour confirmer !';
+  cellEl.addEventListener('click', async ()=>{
+    if(trapConfirmed) return;
     trapConfirmed=true;
-    document.getElementById('trap-status').textContent='✅ Piège posé ! Passe l\'écran...';
-    setTimeout(()=>{
-      trapConfirmed=false;
-      trapSetupIdx++;
-      // Écran de passage entre joueurs
-      if(trapSetupIdx<trapSetupOrder.length){
-        showPassBeforeTrap();
-      } else {
-        finalizeTrapSetup();
-      }
-    }, 1200);
-  }, {once:true});
+    document.getElementById('trap-status').textContent='✅ Piège posé ! En attente des autres joueurs...';
+    g.querySelectorAll('.cell').forEach(el=>{ el.style.pointerEvents='none'; });
+    const{data}=await supabaseClient.from('rooms').select('state').eq('id',roomId).single();
+    if(!data) return;
+    const state=data.state;
+    if(!state.traps) state.traps={};
+    state.traps[p]={r,c};
+    await supabaseClient.from('rooms').update({state}).eq('id',roomId);
+    if(Object.keys(state.traps).length>=state.numPlayers){
+      startGameScreen(state);
+    }
+  },{once:true});
 }
 
-function showPassBeforeTrap(){
-  const next=trapSetupOrder[trapSetupIdx];
-  document.getElementById('pass-title').textContent="PASSEZ L'ÉCRAN";
-  document.getElementById('pass-sub').innerHTML=`C'est au tour de <span style="color:${PCOL[next]};font-weight:700">${PNAMES[next]}</span> de poser son piège`;
-  document.getElementById('pass-btn').textContent='JE SUIS PRÊT ▶';
-  document.getElementById('pass-btn').onclick=showTrapScreen;
-  showScreen('screen-pass');
-}
-
-async function finalizeTrapSetup(){
-  // Sauvegarder les pièges dans le state Supabase
-  const{data}=await supabaseClient.from('rooms').select('state').eq('id',roomId).single();
-  if(!data) return;
-  const state=data.state;
-  state.traps=trapSelections;
-  await supabaseClient.from('rooms').update({state}).eq('id',roomId);
-  startGameScreen(state);
-}
 // ════════════════════════════════════════
 //  GRID BUILD
 // ════════════════════════════════════════
