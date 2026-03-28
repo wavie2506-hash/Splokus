@@ -867,7 +867,7 @@ if(error||!data) return;
 if(trapTriggered){
   state.lastTrapMsg=trapMsg;
   window._trapMsgShown=null; // forcer l'affichage
-  state.cells=cells;
+  state.cells=cellsBackup; // restaurer l'état avant le coup
   const newStatus=state.gameOver?'ended':'playing';
   await supabaseClient.from('rooms')
     .update({state, current_player:state.turnOrder[state.turnIdx%state.turnOrder.length], status:newStatus})
@@ -881,9 +881,10 @@ if(trapTriggered){
   const currentP=state.turnOrder[state.turnIdx%state.turnOrder.length];
   if(currentP!==myPlayerNum) return; // not my turn
 
-  const cells=state.cells;
-  const cell=cells[idx(r,c)];
-  if(cell.blocked) return;
+ const cells=state.cells;
+const cellsBackup=JSON.parse(JSON.stringify(cells));
+const cell=cells[idx(r,c)];
+if(cell.blocked) return;
 
   const p=myPlayerNum;
   const pl=state.players[p];
