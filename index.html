@@ -531,7 +531,8 @@ async function joinRoom(){
   setBadge('CONNEXION...','');
   const{data,error}=await supabaseClient.from('rooms').select('*').eq('id',code).single();
   if(error||!data){ setLobbyErr('Partie introuvable'); return; }
-  if(data.status==='playing'){ setLobbyErr('Partie déjà en cours'); return; }
+ const hasAllTraps=data.state.traps&&Object.keys(data.state.traps).length>=data.num_players;
+if(data.status==='playing'&&hasAllTraps){ setLobbyErr('Partie déjà en cours'); return; }
   if(data.status==='ended'){ setLobbyErr('Partie terminée'); return; }
 
   // Find next available player slot
