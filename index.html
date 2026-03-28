@@ -925,14 +925,16 @@ const isSteal=
   if(doBlock){ pl.bonuses.block.act=false; pl.bonuses.block.used=true; }
 console.log('captured:', captured.map(([r,c])=>`${r},${c}`));
 console.log('traps:', state.traps);
-  
+  console.log('captured:', captured.map(([r,c])=>`${r},${c}`));
+console.log('traps:', state.traps);
+console.log('trap details:', JSON.stringify(state.traps));
 // Vérifier les pièges AVANT d'appliquer
 const traps=state.traps||{};
 let trapTriggered=false;
 let trapMsg='';
 for(const[ownerStr, trap] of Object.entries(traps)){
   const owner=parseInt(ownerStr);
-  const triggered=captured.some(([tr,tc])=>tr===trap.r&&tc===trap.c);
+ const triggered=captured.some(([tr,tc])=>Number(tr)===Number(trap.r)&&Number(tc)===Number(trap.c));
   if(!triggered) continue;
   trapTriggered=true;
   if(owner===p){
