@@ -33,14 +33,17 @@ html, body {
   width: 100%;
   position: fixed;
 }
-
 .screen {
-  overflow-y: auto;
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
   height: 100%;
+  padding: 20px 8px 40px;
+  overflow-y: auto;
   -webkit-overflow-scrolling: touch;
 }
-.screen { display:none; flex-direction:column; align-items:center; width:100%; min-height:100vh; padding:20px 8px 40px; }
-.screen.visible { display:flex; }
+.screen.visible { display: flex; }
 
 .logo {
   font-family:'Bebas Neue',sans-serif;
