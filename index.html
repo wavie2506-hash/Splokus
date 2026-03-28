@@ -915,48 +915,6 @@ const isSteal=
   const doBlock=pl.bonuses.block.act;
   if(doBlock){ pl.bonuses.block.act=false; pl.bonuses.block.used=true; }
 
-  // Vérifier les pièges AVANT d'appliquer
-const traps=state.traps||{};
-let trapTriggered=false;
-let trapMsg='';
-for(const[ownerStr, trap] of Object.entries(traps)){
-  const owner=parseInt(ownerStr);
-  const triggered=captured.some(([tr,tc])=>tr===trap.r&&tc===trap.c);
-  if(!triggered) continue;
-  trapTriggered=true;
-  if(owner===p){
-    state.players[p].score=Math.max(0, state.players[p].score-7);
-    trapMsg=`💀 ${PNAMES[p]} A TOUCHÉ SON PROPRE PIÈGE !\n-7 pts`;
-  } else {
-    state.players[owner].score+=5;
-    trapMsg=`⚡ ${PNAMES[p]} A DÉCLENCHÉ LE PIÈGE\nDE ${PNAMES[owner]} !\n+5 pts pour ${PNAMES[owner]}`;
-  }
-}
-
-// Si piège déclenché → annuler le coup
-if(trapTriggered){
-  state.lastTrapMsg=trapMsg;
-  state.turnIdx++;
-  let guard=0;
-  while(guard<state.numPlayers){
-    const nextP=state.turnOrder[state.turnIdx%state.turnOrder.length];
-    if(state.skipQueue[nextP]){
-      delete state.skipQueue[nextP];
-      state.turnIdx++;
-      guard++;
-    } else { break; }
-  }
-  state.lastSkippedPlayer=null;
-  state.cells=cells;
-  const newStatus=state.gameOver?'ended':'playing';
-  await supabaseClient.from('rooms')
-    .update({state, current_player:state.turnOrder[state.turnIdx%state.turnOrder.length], status:newStatus})
-    .eq('id',roomId);
-  lastKnownState=state;
-renderGameState(state);
-flashLit([]);
-return;
-}
 // Vérifier les pièges AVANT d'appliquer
 const traps=state.traps||{};
 let trapTriggered=false;
