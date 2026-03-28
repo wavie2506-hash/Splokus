@@ -319,6 +319,15 @@ body {
   <div class="waiting-msg" id="waiting-msg">En attente des autres joueurs...</div>
 </div>
 
+  <!-- ══ TRAP SCREEN ══ -->
+<div class="screen" id="screen-trap">
+  <div class="logo">SPLOKUS</div>
+  <div class="pass-title" style="font-family:'Bebas Neue',sans-serif;font-size:48px;letter-spacing:6px;text-align:center;" id="trap-title">JOUEUR 1</div>
+  <div style="font-size:9px;letter-spacing:4px;color:var(--muted);text-align:center;margin-bottom:16px;">CHOISIS TA CASE PIÈGE — MÉMORISE-LA BIEN</div>
+  <div style="font-size:9px;letter-spacing:2px;color:#ff9900;text-align:center;margin-bottom:12px;">⚠️ Adversaire touche → +5 pts pour toi · Tu la touches → -7 pts</div>
+  <div id="trap-grid" style="display:grid;grid-template-columns:repeat(11,46px);grid-template-rows:repeat(11,46px);gap:2px;background:#040406;padding:2px;border-radius:6px;border:1px solid #181825;"></div>
+  <div style="font-size:9px;letter-spacing:3px;color:var(--muted);margin-top:12px;" id="trap-status">Clique une case pour la poser</div>
+</div>
 <!-- ══ GAME ══ -->
 <div class="screen" id="screen-game">
   <div class="game-header" id="game-header" data-p="1">
@@ -457,7 +466,8 @@ function makeInitialState(nPlayers){
     lastLit:[],
     skipQueue:{},
     gameOver:false,
-    connectedPlayers:{}
+    connectedPlayers:{},
+    traps: {}, // { playerNum: {r, c} }
   };
 }
 
@@ -623,11 +633,31 @@ function onRoomUpdate(row){
     return;
   }
   // Game just started
-  if(row.status==='playing' && document.getElementById('screen-waiting').classList.contains('visible')){
-    numPlayers=row.num_players;
-    startGameScreen(state);
+  if(row.status==='playing'){
+  numPlayers=row.num_players;
+  const onWaiting=document.getElementById('screen-waiting').classList.contains('visible');
+  const onTrap=document.getElementById('screen-trap').classList.contains('visible');
+  const onPass=document.getElementById('screen-pass').classList.contains('visible');
+
+  // Si les pièges sont déjà configurés, lancer le jeu pour tout le monde
+  if(state.traps && Object.keys(state.traps).length>=numPlayers){
+    if(!document.getElementById('screen-game').classList.contains('visible')){
+      startGameScreen(state);
+    } else {
+      renderGameState(state);
+    }
     return;
   }
+  // Sinon, J1 configure les pièges, les autres attendent
+  if(onWaiting){
+    if(myPlayerNum===1){
+      startTrapSetup(state);
+    } else {
+      document.getElementById('waiting-msg').textContent='⏳ En attente de la configuration...';
+    }
+  }
+  return;
+}
   // In-game update
   if(row.status==='playing' || row.status==='ended'){
     renderGameState(state);
@@ -642,7 +672,95 @@ function startGameScreen(state){
   renderGameState(state);
   showScreen('screen-game');
 }
+// ══ TRAP SETUP ══
+let trapSetupIdx=0;
+let trapSetupOrder=[];
+let trapSelections={};
 
+function startTrapSetup(state){
+  trapSetupIdx=0;
+  trapSetupOrder=[...state.turnOrder];
+  trapSelections={};
+  showTrapScreen();
+}
+
+function showTrapScreen(){
+  if(trapSetupIdx>=trapSetupOrder.length){
+    // Tous ont choisi → sauvegarder et lancer
+    finalizeTrapSetup();
+    return;
+  }
+  const p=trapSetupOrder[trapSetupIdx];
+  const title=document.getElementById('trap-title');
+  title.textContent=PNAMES[p];
+  title.style.color=`var(--p${p})`;
+  buildTrapGrid(p);
+  document.getElementById('trap-status').textContent='Clique une case pour la poser';
+  showScreen('screen-trap');
+}
+
+function buildTrapGrid(p){
+  const g=document.getElementById('trap-grid'); g.innerHTML='';
+  for(let r=0;r<GRID;r++)for(let c=0;c<GRID;c++){
+    const d=document.createElement('div');
+    d.className='cell';
+    if(dead(r,c)){
+      d.classList.add('dead');
+    } else {
+      d.classList.add('empty');
+      d.style.cursor='crosshair';
+      d.addEventListener('click',()=>onTrapCell(r,c,p));
+    }
+    g.appendChild(d);
+  }
+}
+
+let trapConfirmed=false;
+function onTrapCell(r,c,p){
+  if(trapConfirmed) return;
+  // Highlight la case choisie
+  const g=document.getElementById('trap-grid');
+  g.querySelectorAll('.cell').forEach(el=>el.style.outline='');
+  const cellEl=g.children[r*GRID+c];
+  cellEl.style.outline=`3px solid var(--p${p})`;
+  cellEl.style.outlineOffset='-3px';
+  document.getElementById('trap-status').textContent=`Case (${r},${c}) sélectionnée — confirme en recliquant !`;
+  // Deuxième clic = confirmation
+  cellEl.addEventListener('click', ()=>{
+    trapSelections[p]={r,c};
+    trapConfirmed=true;
+    document.getElementById('trap-status').textContent='✅ Piège posé ! Passe l\'écran...';
+    setTimeout(()=>{
+      trapConfirmed=false;
+      trapSetupIdx++;
+      // Écran de passage entre joueurs
+      if(trapSetupIdx<trapSetupOrder.length){
+        showPassBeforeTrap();
+      } else {
+        finalizeTrapSetup();
+      }
+    }, 1200);
+  }, {once:true});
+}
+
+function showPassBeforeTrap(){
+  const next=trapSetupOrder[trapSetupIdx];
+  document.getElementById('pass-title').textContent="PASSEZ L'ÉCRAN";
+  document.getElementById('pass-sub').innerHTML=`C'est au tour de <span style="color:${PCOL[next]};font-weight:700">${PNAMES[next]}</span> de poser son piège`;
+  document.getElementById('pass-btn').textContent='JE SUIS PRÊT ▶';
+  document.getElementById('pass-btn').onclick=showTrapScreen;
+  showScreen('screen-pass');
+}
+
+async function finalizeTrapSetup(){
+  // Sauvegarder les pièges dans le state Supabase
+  const{data}=await supabaseClient.from('rooms').select('state').eq('id',roomId).single();
+  if(!data) return;
+  const state=data.state;
+  state.traps=trapSelections;
+  await supabaseClient.from('rooms').update({state}).eq('id',roomId);
+  startGameScreen(state);
+}
 // ════════════════════════════════════════
 //  GRID BUILD
 // ════════════════════════════════════════
@@ -664,7 +782,11 @@ function renderGameState(state){
   const cells=state.cells;
   const currentP=state.turnOrder[state.turnIdx%state.turnOrder.length];
   const isMyTurn=currentP===myPlayerNum;
-
+if(state.lastTrapMsg && !window._trapMsgShown){
+  window._trapMsgShown=state.lastTrapMsg;
+  banner(state.lastTrapMsg, 'var(--text)', '#ff9900');
+}
+if(!state.lastTrapMsg) window._trapMsgShown=null;
   // Header
   const header=document.getElementById('game-header');
   header.dataset.p=myPlayerNum;
@@ -743,10 +865,10 @@ async function onCell(r,c){
   if(dead(r,c)) return;
 
   // Fetch latest state
-  const{data,error}=await supabaseClient.from('rooms').select('state,status').eq('id',roomId).single();
-  if(error||!data) return;
-  const state=data.state;
-  if(data.status!=='playing') return;
+const{data,error}=await supabaseClient.from('rooms').select('state,status').eq('id',roomId).single();
+if(error||!data) return;
+const state=data.state;
+state.lastTrapMsg=null;
 
   const currentP=state.turnOrder[state.turnIdx%state.turnOrder.length];
   if(currentP!==myPlayerNum) return; // not my turn
@@ -766,10 +888,11 @@ if(alreadyPlayed){
   setLog('⛔ Cette case a déjà été jouée ce tour !');
   return;
 }
-  const stealThreshold = state.numPlayers; // 2 en 2v2, 3 en 3v3
+
+const stealThreshold = state.numPlayers;
 const isSteal=
-    state.lastCell&&state.lastCell.r===r&&state.lastCell.c===c&&
-    state.lastBy&&state.lastBy!==p&&cellHits<stealThreshold;
+  state.lastCell&&state.lastCell.r===r&&state.lastCell.c===c&&
+  state.lastBy&&state.lastBy!==p&&cellHits<stealThreshold;
 
   let spread=SPREAD;
   if(pl.bonuses.double.act){ spread=10; pl.bonuses.double.act=false; pl.bonuses.double.used=true; }
@@ -833,7 +956,20 @@ state.recentMoves.push({r,c,p});
   for(let pp=1;pp<=state.numPlayers;pp++){
     state.players[pp].score=cells.filter(c2=>c2.owner===pp).length;
   }
-
+// ══ VÉRIF PIÈGES ══
+const traps=state.traps||{};
+for(const[ownerStr, trap] of Object.entries(traps)){
+  const owner=parseInt(ownerStr);
+  const triggered=captured.some(([tr,tc])=>tr===trap.r&&tc===trap.c);
+  if(!triggered) continue;
+  if(owner===p){
+    state.players[p].score=Math.max(0, state.players[p].score-7);
+    state.lastTrapMsg=`💀 ${PNAMES[p]} a touché son propre piège ! -7 pts`;
+  } else {
+    state.players[owner].score+=5;
+    state.lastTrapMsg=`⚡ ${PNAMES[p]} a déclenché le piège de ${PNAMES[owner]} ! +5 pts pour ${PNAMES[owner]}`;
+  }
+}
   // Check unlocks
   for(let pp=1;pp<=state.numPlayers;pp++){
     const ppl=state.players[pp];
