@@ -937,20 +937,19 @@ if(trapTriggered){
   state.lastTrapMsg=trapMsg;
   state.cells=cellsBackup;
   state.turnIdx++;
-  let guard=0;
-  while(guard<state.numPlayers){
+  let trapGuard=0;
+while(trapGuard<state.numPlayers){
     const nextP=state.turnOrder[state.turnIdx%state.turnOrder.length];
     if(state.skipQueue[nextP]){
       delete state.skipQueue[nextP];
-      state.turnIdx++;
-      guard++;
-    } else { break; }
+    state.turnIdx++;
+    trapGuard++;
+  } else { break; }
   }
   state.lastSkippedPlayer=null;
-  const newStatus=state.gameOver?'ended':'playing';
   await supabaseClient.from('rooms')
-    .update({state, current_player:state.turnOrder[state.turnIdx%state.turnOrder.length], status:newStatus})
-    .eq('id',roomId);
+  .update({state, current_player:state.turnOrder[state.turnIdx%state.turnOrder.length], status:state.gameOver?'ended':'playing'})
+  .eq('id',roomId);
   lastKnownState=state;
   window._trapMsgShown=null;
   banner(trapMsg,'var(--text)','#ff9900');
