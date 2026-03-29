@@ -980,14 +980,17 @@ for(const[tr,tc]of captured){
   if(dead(tr,tc)) continue;
   const tc2=cells[idx(tr,tc)];
   if(tc2.blocked){ lit.push([tr,tc]); continue; }
+ const lit=[];
+for(const[tr,tc]of captured){
+  if(dead(tr,tc)) continue;
+  const tc2=cells[idx(tr,tc)];
+  if(tc2.blocked){ lit.push([tr,tc]); continue; }
   const wasE=tc2.owner===0;
-  const wasOwner=tc2.owner;
   if(wasE){
     tc2.hits=1;
-  } else if(wasOwner!==p){
+  } else {
     tc2.hits++;
   }
-  // Si même joueur retouche sa propre case → pas d'incrément
   tc2.owner=p;
   if(tc2.hits>=4) tc2.blocked=true;
   if(wasE) pl.empty++;
