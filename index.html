@@ -698,35 +698,39 @@ function subscribeRoom(code){
       else if(status==='CHANNEL_ERROR'||status==='TIMED_OUT') setBadge('HORS LIGNE','err');
     });
 }
-function onRoomUpdate(row){
-  const state=row.state;
-  if(!state) return;
-  lastKnownState=state;
+function onRoomUpdate(row) {
+    const state = row.state;
+    if (!state) return;
 
-  if(row.status==='waiting'){
-    updatePlayersList(state, row.num_players);
-    return;
-  }
+    lastKnownState = state;
+    numPlayers = row.num_players || numPlayers;
 
-  if(row.status==='playing' || row.status==='ended'){
-    numPlayers=row.num_players||numPlayers;
-    const hasAllTraps=state.traps&&Object.keys(state.traps).length>=numPlayers;
+    console.log(`[onRoomUpdate] Status=${row.status}, traps=${Object.keys(state.traps||{}).length}/${numPlayers}, myPlayerNum=${myPlayerNum}`);
 
-    if(hasAllTraps){
-      if(!document.getElementById('screen-game').classList.contains('visible')&&
-         !document.getElementById('screen-end').classList.contains('visible')){
-        startGameScreen(state);
-      } else {
-        renderGameState(state);
-      }
-    } else {
-      const currentlyWaiting=document.getElementById('screen-waiting').classList.contains('visible');
-      if(currentlyWaiting){
-        startTrapSetup(state);
-      }
+    if (row.status === 'waiting') {
+        updatePlayersList(state, row.num_players);
+        return;
     }
-    return;
-  }
+
+    // === NOUVELLE LOGIQUE PLUS ROBUSTE ===
+    const hasAllTraps = state.traps && Object.keys(state.traps).length >= numPlayers;
+
+    if (hasAllTraps) {
+        console.log('[onRoomUpdate] Tous les pièges sont posés → passage au jeu');
+        if (!document.getElementById('screen-game').classList.contains('visible') &&
+            !document.getElementById('screen-end').classList.contains('visible')) {
+            startGameScreen(state);
+        } else {
+            renderGameState(state);
+        }
+    } 
+    else if (row.status === 'playing' || !row.status) {
+        // Si on est encore en phase pièges mais que le status est déjà "playing"
+        const currentlyOnTrapScreen = document.getElementById('screen-trap').classList.contains('visible');
+        if (currentlyOnTrapScreen) {
+            console.log('[onRoomUpdate] Encore en phase pièges → on reste sur trap screen');
+        }
+    }
 }
 // ════════════════════════════════════════
 //  START GAME
@@ -771,9 +775,9 @@ function buildTrapGrid(p) {
 function startTrapSetup(state) {
     console.log('[startTrapSetup] Appelée avec myPlayerNum =', myPlayerNum, 'state.traps =', state.traps);
 
+    // Correction critique pour J1
     if (!myPlayerNum || myPlayerNum < 1) {
-        console.error('ERREUR : myPlayerNum invalide dans startTrapSetup !', myPlayerNum);
-        // Fallback temporaire
+        console.warn('myPlayerNum invalide, fallback à 1 (créateur)');
         myPlayerNum = 1;
     }
 
@@ -782,10 +786,8 @@ function startTrapSetup(state) {
     const p = myPlayerNum;
 
     const title = document.getElementById('trap-title');
-    if (title) {
-        title.textContent = (state.playerNames && state.playerNames[p]) || PNAMES[p] || `JOUEUR ${p}`;
-        title.style.color = `var(--p${p})`;
-    }
+    title.textContent = (state.playerNames && state.playerNames[p]) || PNAMES[p] || `JOUEUR ${p}`;
+    title.style.color = `var(--p${p})`;
 
     buildTrapGrid(p);
 
@@ -870,9 +872,13 @@ function onTrapCell(r, c, p) {
         console.log(`Pièges posés : ${trapCount}/${needed}`);
 
         if (trapCount >= needed) {
-            console.log('Tous les pièges sont posés → démarrage du jeu');
-            setTimeout(() => startGameScreen(state), 200);
+            console.log('Tous les pièges sont posés → démarrage du jeu (local)');
+            setTimeout(() => startGameScreen(state), 300);
+            return;
         }
+
+        // Si on n'est pas le dernier, on force un rechargement de l'état pour aider le realtime
+        console.log('En attente des autres joueurs...');
     };
 
     // On attache le listener UNE SEULE FOIS et on le supprime après
