@@ -1246,7 +1246,13 @@ window.addEventListener('load',()=>{
   if(roomParam){
     document.getElementById('join-input').value=roomParam.toUpperCase();
     // Auto-trigger join after a tiny delay
-    setTimeout(()=>joinRoom(),300);
+    setTimeout(()=>{
+  if(!myName){
+    myName = prompt('Ton nom ?') || 'JOUEUR';
+    myName = myName.toUpperCase().slice(0,12);
+  }
+  joinRoom();
+},300);
   }
 });
 </script>
