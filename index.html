@@ -786,17 +786,6 @@ if(!roomId){
   return;
 }
 
-// ⚠️ changer le nom de data pour éviter conflit
-const { data: roomData } = await supabaseClient
-  .from('rooms')
-  .select('state')
-  .eq('id', roomId)
-  .single();
-
-if(!roomData) return;
-
-const state = roomData.state;
-
 const { data } = await supabaseClient
   .from('rooms')
   .select('state')
