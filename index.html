@@ -541,8 +541,16 @@ async function createRoom(){
   const code=generateCode();
   const state=makeInitialState(numPlayers);
   // Mark player 1 as connected
-  state.connectedPlayers[1]=true;
-state.playerNames[1]=myName;
+  // Demander le nom AVANT tout
+myName = prompt('Ton nom ?') || 'JOUEUR 1';
+myName = myName.toUpperCase().slice(0,12);
+
+// Mark player 1 as connected
+state.connectedPlayers[1] = true;
+state.playerNames[1] = myName;
+
+roomId = code;
+myPlayerNum = 1;
 
   const{error}=await supabaseClient.from('rooms').insert({
     id:code,
@@ -555,11 +563,7 @@ state.playerNames[1]=myName;
 
   // Also insert player record
   await supabaseClient.from('room_players').insert({room_id:code,player_num:1});
-
-  roomId=code;
-  myPlayerNum=1;
-  myName = prompt('Ton nom ?') || 'JOUEUR 1';
-myName = myName.toUpperCase().slice(0,12);
+  
 
 state.connectedPlayers[1] = true;
 state.playerNames[1] = myName;
@@ -593,9 +597,14 @@ if(data.status==='playing'&&hasAllTraps){ setLobbyErr('Partie déjà en cours');
   // Update state to mark this player connected
   const state=data.state;
   if(!state.connectedPlayers) state.connectedPlayers={};
-  state.connectedPlayers[myNum]=true;
-if(!state.playerNames) state.playerNames={};
-state.playerNames[myNum]=myName;
+  // Demander le nom AVANT d'entrer
+myName = prompt('Ton nom ?') || `JOUEUR ${myNum}`;
+myName = myName.toUpperCase().slice(0,12);
+
+// Update state
+state.connectedPlayers[myNum] = true;
+if(!state.playerNames) state.playerNames = {};
+state.playerNames[myNum] = myName;
 
   // If all players joined, start the game
   const allJoined=takenNums.size+1>=data.num_players;
@@ -637,7 +646,7 @@ function updatePlayersList(state, nPlayers){
     div.innerHTML=`
       <div class="slot-dot"></div>
       <div class="slot-name">
-  ${filled ? ((state.playerNames && state.playerNames[p]) || PNAMES[p]) : 'En attente...'}
+  ${filled ? ((state.playerNames?.[p]) || PNAMES[p]) : 'En attente...'}
 </div>
       ${p===myPlayerNum?'<div class="slot-you">← C\'EST TOI</div>':''}
     `;
@@ -737,7 +746,7 @@ function startTrapSetup(state){
   trapConfirmed=false;
   const p=myPlayerNum;
   const title=document.getElementById('trap-title');
-  title.textContent=(state.playerNames && state.playerNames[p]) || (state.playerNames && state.playerNames[p]) || PNAMES[p];
+  title.textContent=(state.playerNames && state.playerNames[p]) || (state.playerNames?.[p]) || PNAMES[p];
   title.style.color=`var(--p${p})`;
   buildTrapGrid(p);
   document.getElementById('trap-status').textContent='Clique une case pour poser ton piège';
@@ -828,7 +837,7 @@ if(state.lastTrapMsg && state.lastTrapMsg!==window._trapMsgShown){
     const d=document.createElement('div');
     d.className=`mini-score ms${p}`;
     d.textContent = `${
-  ((state.playerNames && state.playerNames[p]) || PNAMES[p]).replace('JOUEUR ','J')
+  ((state.playerNames?.[p]) || PNAMES[p]).replace('JOUEUR ','J')
 }: ${(state.players[p]||{}).score||0}`;
     as.appendChild(d);
   }
@@ -961,10 +970,10 @@ for(const[ownerStr, trap] of Object.entries(traps)){
   trapTriggered=true;
   if(owner===p){
     state.players[p].score=Math.max(0, state.players[p].score-7);
-    trapMsg=`💀 ${(state.playerNames && state.playerNames[p]) || (state.playerNames && state.playerNames[p]) || PNAMES[p]} A TOUCHÉ SON PROPRE PIÈGE !\n-7 pts`;
+    trapMsg=`💀 ${(state.playerNames && state.playerNames[p]) || (state.playerNames?.[p]) || PNAMES[p]} A TOUCHÉ SON PROPRE PIÈGE !\n-7 pts`;
   } else {
     state.players[owner].score+=5;
-    trapMsg=`⚡ ${(state.playerNames && state.playerNames[p]) || (state.playerNames && state.playerNames[p]) || PNAMES[p]} A DÉCLENCHÉ LE PIÈGE\nDE ${PNAMES[owner]} !\n+5 pts pour ${PNAMES[owner]}`;
+    trapMsg=`⚡ ${(state.playerNames && state.playerNames[p]) || (state.playerNames?.[p]) || PNAMES[p]} A DÉCLENCHÉ LE PIÈGE\nDE ${PNAMES[owner]} !\n+5 pts pour ${PNAMES[owner]}`;
   }
 }
 
@@ -1197,7 +1206,7 @@ function endGame(state){
     const d=document.createElement('div');
     d.className='end-row'+(i===0&&!tie?` winner w${p}`:'');
     d.style.color=`var(--p${p})`;
-    d.textContent=`${i+1}. ${(state.playerNames && state.playerNames[p]) || (state.playerNames && state.playerNames[p]) || PNAMES[p]} — ${(state.players[p]||{}).score||0} cases`;
+    d.textContent=`${i+1}. ${(state.playerNames && state.playerNames[p]) || (state.playerNames?.[p]) || PNAMES[p]} — ${(state.players[p]||{}).score||0} cases`;
     sc.appendChild(d);
   });
   showScreen('screen-end');
