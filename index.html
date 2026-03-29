@@ -833,56 +833,53 @@ function onTrapCell(r, c, p) {
     const cellEl = g.children[r * GRID + c];
     if (!cellEl) return;
 
-    // Reset outlines
+    // Reset + highlight
     g.querySelectorAll('.cell').forEach(el => {
         el.style.outline = '';
         el.style.outlineOffset = '';
     });
 
-    // Highlight la case
     cellEl.style.outline = `3px solid var(--p${p})`;
     cellEl.style.outlineOffset = '-3px';
 
-    document.getElementById('trap-status').textContent = 
-        'Case sélectionnée — reclique pour confirmer !';
+    document.getElementById('trap-status').textContent = 'Case sélectionnée — reclique pour confirmer !';
 
-    // === Handler de confirmation (un seul et unique) ===
     const confirmClick = async function confirmHandler(e) {
-        e.stopImmediatePropagation();   // très important
-
+        e.stopImmediatePropagation();
         if (trapConfirmed) return;
+
         trapConfirmed = true;
 
-        // UI immédiate
-        document.getElementById('trap-status').textContent = 
-            '✅ Piège posé ! En attente des autres joueurs...';
-
+        document.getElementById('trap-status').textContent = '✅ Piège posé ! En attente des autres joueurs...';
         g.querySelectorAll('.cell').forEach(el => {
             el.style.pointerEvents = 'none';
             el.style.cursor = 'default';
         });
 
-        // ====================== SUPABASE ======================
         if (!roomId) {
             console.error('roomId manquant !');
             return;
         }
 
+        // === 1. Récupérer l'état actuel ===
         const { data: roomData, error } = await supabaseClient
             .from('rooms')
-            .select('state, num_players')
+            .select('state')
             .eq('id', roomId)
             .single();
 
         if (error || !roomData) {
-            console.error('Erreur room:', error);
+            console.error('Erreur récupération room:', error);
             return;
         }
 
         let state = roomData.state || {};
         if (!state.traps) state.traps = {};
+
+        // === 2. Ajouter SEULEMENT notre piège (merge) ===
         state.traps[p] = { r, c };
 
+        // === 3. Mise à jour ===
         const { error: updateError } = await supabaseClient
             .from('rooms')
             .update({ state })
@@ -893,11 +890,10 @@ function onTrapCell(r, c, p) {
             return;
         }
 
-        // Lancement immédiat si dernier joueur
         const trapCount = Object.keys(state.traps).length;
-        const needed = state.numPlayers || roomData.num_players || numPlayers || 2;
+        const needed = state.numPlayers || numPlayers || 2;
 
-        console.log(`Pièges posés : ${trapCount}/${needed} (après mon piège)`);
+        console.log(`Pièges posés après mon update : ${trapCount}/${needed}`);
 
         if (trapCount >= needed) {
             console.log('Tous les pièges posés → démarrage local');
@@ -905,23 +901,29 @@ function onTrapCell(r, c, p) {
             return;
         }
 
-        // === NOUVEAU : on force une relecture fraîche après chaque mise à jour ===
-        console.log('En attente des autres joueurs... Force refresh...');
-        const { data: fresh } = await supabaseClient
-            .from('rooms')
-            .select('state')
-            .eq('id', roomId)
-            .single();
+        // === 4. Force refresh (plus agressif) ===
+        console.log('En attente des autres... Force refresh');
+        setTimeout(async () => {
+            const { data: fresh } = await supabaseClient
+                .from('rooms')
+                .select('state')
+                .eq('id', roomId)
+                .single();
 
-        if (fresh && fresh.state) {
-            const freshTrapCount = Object.keys(fresh.state.traps || {}).length;
-            console.log(`[Refresh] traps maintenant à ${freshTrapCount}/${needed}`);
+            if (fresh?.state) {
+                const freshCount = Object.keys(fresh.state.traps || {}).length;
+                console.log(`[Refresh] traps = ${freshCount}/${needed}`);
 
-            if (freshTrapCount >= needed) {
-                console.log('✅ Tous les pièges enfin détectés via refresh → LANCEMENT');
-                setTimeout(() => startGameScreen(fresh.state), 200);
+                if (freshCount >= needed) {
+                    console.log('✅ Tous les pièges détectés via refresh → LANCEMENT');
+                    startGameScreen(fresh.state);
+                }
             }
-        }
+        }, 800);   // on attend un peu plus longtemps
+    };
+
+    cellEl.addEventListener('click', confirmClick, { once: true });
+}
 
 // ════════════════════════════════════════
 //  GRID BUILD
