@@ -856,15 +856,14 @@ function onTrapCell(r, c, p) {
             el.style.cursor = 'default';
         });
 
-        if (!roomId) {
+                if (!roomId) {
             console.error('roomId manquant !');
             return;
         }
 
-        // === 1. Récupérer l'état actuel ===
         const { data: roomData, error } = await supabaseClient
             .from('rooms')
-            .select('state')
+            .select('state, num_players')
             .eq('id', roomId)
             .single();
 
@@ -875,14 +874,16 @@ function onTrapCell(r, c, p) {
 
         let state = roomData.state || {};
         if (!state.traps) state.traps = {};
-
-        // === 2. Ajouter SEULEMENT notre piège (merge) ===
         state.traps[p] = { r, c };
 
-        // === 3. Mise à jour ===
+        // === ICI LA CORRECTION PRINCIPALE ===
+        // On met à jour state + status (comme dans joinRoom) → ça force le realtime
         const { error: updateError } = await supabaseClient
             .from('rooms')
-            .update({ state })
+            .update({ 
+                state, 
+                status: 'playing'   // ← important pour que J1 reçoive l'update
+            })
             .eq('id', roomId);
 
         if (updateError) {
@@ -891,9 +892,9 @@ function onTrapCell(r, c, p) {
         }
 
         const trapCount = Object.keys(state.traps).length;
-        const needed = state.numPlayers || numPlayers || 2;
+        const needed = state.numPlayers || roomData.num_players || numPlayers || 2;
 
-        console.log(`Pièges posés après mon update : ${trapCount}/${needed}`);
+        console.log(`Pièges posés : ${trapCount}/${needed} (après mon piège)`);
 
         if (trapCount >= needed) {
             console.log('Tous les pièges posés → démarrage local');
@@ -901,7 +902,7 @@ function onTrapCell(r, c, p) {
             return;
         }
 
-        // === 4. Force refresh (plus agressif) ===
+        // Force refresh (on garde au cas où)
         console.log('En attente des autres... Force refresh');
         setTimeout(async () => {
             const { data: fresh } = await supabaseClient
@@ -913,13 +914,12 @@ function onTrapCell(r, c, p) {
             if (fresh?.state) {
                 const freshCount = Object.keys(fresh.state.traps || {}).length;
                 console.log(`[Refresh] traps = ${freshCount}/${needed}`);
-
                 if (freshCount >= needed) {
                     console.log('✅ Tous les pièges détectés via refresh → LANCEMENT');
                     startGameScreen(fresh.state);
                 }
             }
-        }, 800);   // on attend un peu plus longtemps
+        }, 800);
     };
 
     cellEl.addEventListener('click', confirmClick, { once: true });
