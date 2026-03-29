@@ -897,21 +897,31 @@ function onTrapCell(r, c, p) {
         const trapCount = Object.keys(state.traps).length;
         const needed = state.numPlayers || roomData.num_players || numPlayers || 2;
 
-        console.log(`Pièges posés : ${trapCount}/${needed}`);
+        console.log(`Pièges posés : ${trapCount}/${needed} (après mon piège)`);
 
         if (trapCount >= needed) {
-            console.log('Tous les pièges sont posés → démarrage du jeu (local)');
+            console.log('Tous les pièges posés → démarrage local');
             setTimeout(() => startGameScreen(state), 300);
             return;
         }
 
-        // Si on n'est pas le dernier, on force un rechargement de l'état pour aider le realtime
-        console.log('En attente des autres joueurs...');
-    };
+        // === NOUVEAU : on force une relecture fraîche après chaque mise à jour ===
+        console.log('En attente des autres joueurs... Force refresh...');
+        const { data: fresh } = await supabaseClient
+            .from('rooms')
+            .select('state')
+            .eq('id', roomId)
+            .single();
 
-    // On attache le listener UNE SEULE FOIS et on le supprime après
-    cellEl.addEventListener('click', confirmClick, { once: true });
-}
+        if (fresh && fresh.state) {
+            const freshTrapCount = Object.keys(fresh.state.traps || {}).length;
+            console.log(`[Refresh] traps maintenant à ${freshTrapCount}/${needed}`);
+
+            if (freshTrapCount >= needed) {
+                console.log('✅ Tous les pièges enfin détectés via refresh → LANCEMENT');
+                setTimeout(() => startGameScreen(fresh.state), 200);
+            }
+        }
 
 // ════════════════════════════════════════
 //  GRID BUILD
