@@ -21,8 +21,7 @@
 html, body {
   overflow: hidden;
   height: 100dvh;
-  width: 100%;
-  
+  width: 100%;  
   position: fixed;
   background: var(--bg);
   color: var(--text);
@@ -974,13 +973,7 @@ while(trapGuard<state.numPlayers){
   banner(trapMsg,'var(--text)','#ff9900');
   renderGameState(state);
   return;
-}
 const lit=[];
-for(const[tr,tc]of captured){
-  if(dead(tr,tc)) continue;
-  const tc2=cells[idx(tr,tc)];
-  if(tc2.blocked){ lit.push([tr,tc]); continue; }
- const lit=[];
 for(const[tr,tc]of captured){
   if(dead(tr,tc)) continue;
   const tc2=cells[idx(tr,tc)];
@@ -996,7 +989,6 @@ for(const[tr,tc]of captured){
   if(wasE) pl.empty++;
   lit.push([tr,tc]);
 }
-
 state.lastLit=lit;
 state.lastCell={r,c};
 state.lastBy=p;
