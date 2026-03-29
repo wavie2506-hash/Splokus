@@ -589,14 +589,19 @@ if(data.status==='playing'&&hasAllTraps){ setLobbyErr('Partie déjà en cours');
 
   // Insert player
   await supabaseClient.from('room_players').insert({room_id:code,player_num:myNum});
-
-  // Update state to mark this player connected
-  // Demander le nom AVANT tout
 // Demander le nom AVANT tout
-myName = prompt('Ton nom ?') || `JOUEUR ${myNum}`;
-myName = myName.toUpperCase().slice(0,12);
+if(!myName){
+  myName = prompt('Ton nom ?') || `JOUEUR ${myNum}`;
+  myName = myName.toUpperCase().slice(0,12);
+}
 
-// Recharger le state le PLUS RÉCENT (ultra important)
+// Insert player (UNE SEULE FOIS)
+await supabaseClient.from('room_players').insert({
+  room_id: code,
+  player_num: myNum
+});
+
+// Recharger le state le PLUS RÉCENT
 const { data: fresh } = await supabaseClient
   .from('rooms')
   .select('state')
@@ -613,10 +618,10 @@ if(!state.playerNames) state.playerNames = {};
 state.connectedPlayers[myNum] = true;
 state.playerNames[myNum] = myName;
 
-// Vérifier si tout le monde est là
+// Check si tous là
 const allJoined = Object.keys(state.connectedPlayers).length >= data.num_players;
 
-// ✅ UN SEUL update (très important)
+// Update final
 await supabaseClient.from('rooms').update({
   state,
   status: allJoined ? 'playing' : 'waiting'
