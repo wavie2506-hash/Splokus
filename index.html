@@ -739,35 +739,63 @@ function startGameScreen(state){
 // ══ TRAP SETUP ══
 let trapConfirmed=false;
 
-function buildTrapGrid(p){
-  const g=document.getElementById('trap-grid'); g.innerHTML='';
-  for(let r=0;r<GRID;r++)for(let c=0;c<GRID;c++){
-    const d=document.createElement('div');
-    d.className='cell';
-    if(dead(r,c)){
-      d.classList.add('dead');
-    } else {
-      d.classList.add('empty');
-      d.style.cursor='crosshair';
-      d.addEventListener('click',()=>onTrapCell(r,c,p));
+function buildTrapGrid(p) {
+    const g = document.getElementById('trap-grid');
+    if (!g) {
+        console.error('trap-grid introuvable !');
+        return;
     }
-    g.appendChild(d);
-  }
+    g.innerHTML = '';
+
+    console.log(`[buildTrapGrid] Construction de la grille pour joueur ${p} (GRID=${GRID})`);
+
+    for (let r = 0; r < GRID; r++) {
+        for (let c = 0; c < GRID; c++) {
+            const d = document.createElement('div');
+            d.className = 'cell';
+            if (dead(r, c)) {
+                d.classList.add('dead');
+            } else {
+                d.classList.add('empty');
+                d.style.cursor = 'crosshair';
+                // Listener avec log clair
+                d.addEventListener('click', () => {
+                    console.log(`→ Clic détecté sur case [${r},${c}] par joueur ${p}`);
+                    onTrapCell(r, c, p);
+                });
+            }
+            g.appendChild(d);
+        }
+    }
 }
 
+function startTrapSetup(state) {
+    console.log('[startTrapSetup] Appelée avec myPlayerNum =', myPlayerNum, 'state.traps =', state.traps);
 
-function startTrapSetup(state){
-  trapConfirmed=false;
-  const p=myPlayerNum;
-  const title=document.getElementById('trap-title');
-  title.textContent=(state.playerNames && state.playerNames[p]) || (state.playerNames?.[p]) || PNAMES[p];
-  title.style.color=`var(--p${p})`;
-  buildTrapGrid(p);
-  document.getElementById('trap-status').textContent='Clique une case pour poser ton piège';
-  showScreen('screen-trap');
+    if (!myPlayerNum || myPlayerNum < 1) {
+        console.error('ERREUR : myPlayerNum invalide dans startTrapSetup !', myPlayerNum);
+        // Fallback temporaire
+        myPlayerNum = 1;
+    }
+
+    trapConfirmed = false;
+
+    const p = myPlayerNum;
+
+    const title = document.getElementById('trap-title');
+    if (title) {
+        title.textContent = (state.playerNames && state.playerNames[p]) || PNAMES[p] || `JOUEUR ${p}`;
+        title.style.color = `var(--p${p})`;
+    }
+
+    buildTrapGrid(p);
+
+    document.getElementById('trap-status').textContent = 'Clique une case pour poser ton piège';
+    showScreen('screen-trap');
+
+    console.log(`[startTrapSetup] Grille construite pour joueur ${p}`);
 }
   
-let trapConfirmed = false;   // déjà déclaré plus haut dans ton code
 
 function onTrapCell(r, c, p) {
     if (trapConfirmed) return;
