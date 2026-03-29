@@ -558,7 +558,11 @@ state.playerNames[1]=myName;
 
   roomId=code;
   myPlayerNum=1;
-  myName=prompt('Ton nom ?')||'JOUEUR 1';
+  myName = prompt('Ton nom ?') || 'JOUEUR 1';
+myName = myName.toUpperCase().slice(0,12);
+
+state.connectedPlayers[1] = true;
+state.playerNames[1] = myName;
 myName=myName.toUpperCase().slice(0,12);
   setBadge('CONNECTÉ','ok');
   showWaitingRoom(code, state, numPlayers);
@@ -632,7 +636,9 @@ function updatePlayersList(state, nPlayers){
     div.className=`player-slot ps${p}${filled?' filled':''}`;
     div.innerHTML=`
       <div class="slot-dot"></div>
-      <div class="slot-name">${filled?PNAMES[p]:'En attente...'}</div>
+      <div class="slot-name">
+  ${filled ? ((state.playerNames && state.playerNames[p]) || PNAMES[p]) : 'En attente...'}
+</div>
       ${p===myPlayerNum?'<div class="slot-you">← C\'EST TOI</div>':''}
     `;
     list.appendChild(div);
@@ -731,7 +737,7 @@ function startTrapSetup(state){
   trapConfirmed=false;
   const p=myPlayerNum;
   const title=document.getElementById('trap-title');
-  title.textContent=PNAMES[p];
+  title.textContent=(state.playerNames && state.playerNames[p]) || (state.playerNames && state.playerNames[p]) || PNAMES[p];
   title.style.color=`var(--p${p})`;
   buildTrapGrid(p);
   document.getElementById('trap-status').textContent='Clique une case pour poser ton piège';
@@ -799,7 +805,8 @@ if(state.lastTrapMsg && state.lastTrapMsg!==window._trapMsgShown){
   // Header
   const header=document.getElementById('game-header');
   header.dataset.p=myPlayerNum;
-  document.getElementById('gh-name').textContent=PNAMES[myPlayerNum];
+  document.getElementById('gh-name').textContent =
+  (state.playerNames && state.playerNames[myPlayerNum]) || PNAMES[myPlayerNum];
   document.getElementById('gh-score').textContent=(state.players[myPlayerNum]||{}).score||0;
   document.getElementById('gh-badge').textContent=isMyTurn?'MON TOUR':'En attente';
 
@@ -810,7 +817,9 @@ if(state.lastTrapMsg && state.lastTrapMsg!==window._trapMsgShown){
     ti.textContent='C\'EST TON TOUR — JOUE !';
   } else {
     ti.className='turn-indicator their-turn';
-    ti.textContent=`Tour de ${PNAMES[currentP]}...`;
+    ti.textContent = `Tour de ${
+  (state.playerNames && state.playerNames[currentP]) || PNAMES[currentP]
+}...`;
   }
 
   // Mini scores
@@ -818,7 +827,9 @@ if(state.lastTrapMsg && state.lastTrapMsg!==window._trapMsgShown){
   for(let p=1;p<=state.numPlayers;p++){
     const d=document.createElement('div');
     d.className=`mini-score ms${p}`;
-    d.textContent=`${PNAMES[p].replace('JOUEUR ','J')}: ${(state.players[p]||{}).score||0}`;
+    d.textContent = `${
+  ((state.playerNames && state.playerNames[p]) || PNAMES[p]).replace('JOUEUR ','J')
+}: ${(state.players[p]||{}).score||0}`;
     as.appendChild(d);
   }
 
@@ -950,10 +961,10 @@ for(const[ownerStr, trap] of Object.entries(traps)){
   trapTriggered=true;
   if(owner===p){
     state.players[p].score=Math.max(0, state.players[p].score-7);
-    trapMsg=`💀 ${PNAMES[p]} A TOUCHÉ SON PROPRE PIÈGE !\n-7 pts`;
+    trapMsg=`💀 ${(state.playerNames && state.playerNames[p]) || (state.playerNames && state.playerNames[p]) || PNAMES[p]} A TOUCHÉ SON PROPRE PIÈGE !\n-7 pts`;
   } else {
     state.players[owner].score+=5;
-    trapMsg=`⚡ ${PNAMES[p]} A DÉCLENCHÉ LE PIÈGE\nDE ${PNAMES[owner]} !\n+5 pts pour ${PNAMES[owner]}`;
+    trapMsg=`⚡ ${(state.playerNames && state.playerNames[p]) || (state.playerNames && state.playerNames[p]) || PNAMES[p]} A DÉCLENCHÉ LE PIÈGE\nDE ${PNAMES[owner]} !\n+5 pts pour ${PNAMES[owner]}`;
   }
 }
 
@@ -1186,7 +1197,7 @@ function endGame(state){
     const d=document.createElement('div');
     d.className='end-row'+(i===0&&!tie?` winner w${p}`:'');
     d.style.color=`var(--p${p})`;
-    d.textContent=`${i+1}. ${PNAMES[p]} — ${(state.players[p]||{}).score||0} cases`;
+    d.textContent=`${i+1}. ${(state.playerNames && state.playerNames[p]) || (state.playerNames && state.playerNames[p]) || PNAMES[p]} — ${(state.players[p]||{}).score||0} cases`;
     sc.appendChild(d);
   });
   showScreen('screen-end');
