@@ -767,39 +767,36 @@ function startTrapSetup(state){
   showScreen('screen-trap');
 }
   
+let trapConfirmed = false;   // déjà déclaré plus haut dans ton code
+
 function onTrapCell(r, c, p) {
     if (trapConfirmed) return;
 
     const g = document.getElementById('trap-grid');
-    
-    // Reset toutes les outlines
+    const cellEl = g.children[r * GRID + c];
+    if (!cellEl) return;
+
+    // Reset outlines
     g.querySelectorAll('.cell').forEach(el => {
         el.style.outline = '';
         el.style.outlineOffset = '';
     });
 
-    const cellEl = g.children[r * GRID + c];
-    if (!cellEl) return;
-
-    // Highlight la case sélectionnée
+    // Highlight la case
     cellEl.style.outline = `3px solid var(--p${p})`;
     cellEl.style.outlineOffset = '-3px';
 
     document.getElementById('trap-status').textContent = 
         'Case sélectionnée — reclique pour confirmer !';
 
-    // === IMPORTANT : on retire l'ancien listener s'il existe ===
-    if (cellEl._confirmHandler) {
-        cellEl.removeEventListener('click', cellEl._confirmHandler);
-    }
+    // === Handler de confirmation (un seul et unique) ===
+    const confirmClick = async function confirmHandler(e) {
+        e.stopImmediatePropagation();   // très important
 
-    // Nouveau handler pour la confirmation
-    const confirmHandler = async () => {
         if (trapConfirmed) return;
-        
         trapConfirmed = true;
 
-        // Mise à jour UI immédiate
+        // UI immédiate
         document.getElementById('trap-status').textContent = 
             '✅ Piège posé ! En attente des autres joueurs...';
 
@@ -808,7 +805,7 @@ function onTrapCell(r, c, p) {
             el.style.cursor = 'default';
         });
 
-        // ====================== SAUVEGARDE SUPABASE ======================
+        // ====================== SUPABASE ======================
         if (!roomId) {
             console.error('roomId manquant !');
             return;
@@ -821,13 +818,12 @@ function onTrapCell(r, c, p) {
             .single();
 
         if (error || !roomData) {
-            console.error('Erreur récupération room:', error);
+            console.error('Erreur room:', error);
             return;
         }
 
         let state = roomData.state || {};
         if (!state.traps) state.traps = {};
-        
         state.traps[p] = { r, c };
 
         const { error: updateError } = await supabaseClient
@@ -836,23 +832,24 @@ function onTrapCell(r, c, p) {
             .eq('id', roomId);
 
         if (updateError) {
-            console.error('Erreur mise à jour piège:', updateError);
+            console.error('Update error:', updateError);
             return;
         }
 
-        // Vérification immédiate si on est le dernier joueur
+        // Lancement immédiat si dernier joueur
         const trapCount = Object.keys(state.traps).length;
-        const needed = state.numPlayers || roomData.num_players || numPlayers;
+        const needed = state.numPlayers || roomData.num_players || numPlayers || 2;
+
+        console.log(`Pièges posés : ${trapCount}/${needed}`);
 
         if (trapCount >= needed) {
-            console.log(`Tous les pièges posés (${trapCount}/${needed}) → lancement jeu`);
-            setTimeout(() => startGameScreen(state), 300);   // petit délai pour laisser l'UI respirer
+            console.log('Tous les pièges sont posés → démarrage du jeu');
+            setTimeout(() => startGameScreen(state), 200);
         }
     };
 
-    // On stocke le handler pour pouvoir le supprimer plus tard si besoin
-    cellEl._confirmHandler = confirmHandler;
-    cellEl.addEventListener('click', confirmHandler, { once: true });
+    // On attache le listener UNE SEULE FOIS et on le supprime après
+    cellEl.addEventListener('click', confirmClick, { once: true });
 }
 
 // ════════════════════════════════════════
