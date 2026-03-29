@@ -536,38 +536,48 @@ function setLobbyErr(msg){
   document.getElementById('lobby-err').textContent=msg;
   setTimeout(()=>{document.getElementById('lobby-err').textContent='';},3000);
 }
-async function createRoom(){
-  setBadge('CONNEXION...','');
-  const code=generateCode();
-  roomId = code;
-  // Demander le nom AVANT
-myName = prompt('Ton nom ?') || 'JOUEUR 1';
-myName = myName.toUpperCase().slice(0,12);
+async function createRoom() {
+    setBadge('CONNEXION...', '');
 
-const state = makeInitialState(numPlayers);
+    const code = generateCode();
+    roomId = code;
 
-state.connectedPlayers[1] = true;
-state.playerNames[1] = myName;
+    // === IMPORTANT : on définit tout de suite qui est le joueur 1 ===
+    myPlayerNum = 1;
 
-const { error } = await supabaseClient.from('rooms').insert({
-    id:code,
-    state,
-    current_player:1,
-    num_players:numPlayers,
-    status:'waiting'
-  });
-  if(error){ setLobbyErr('Erreur réseau – réessaie'); console.error(error); return; }
+    // Demander le nom AVANT
+    myName = prompt('Ton nom ?') || 'JOUEUR 1';
+    myName = myName.toUpperCase().slice(0, 12);
 
-  // Also insert player record
-  await supabaseClient.from('room_players').insert({room_id:code,player_num:1});
-  
+    const state = makeInitialState(numPlayers);
+    state.connectedPlayers[1] = true;
+    state.playerNames[1] = myName;
 
-state.connectedPlayers[1] = true;
-state.playerNames[1] = myName;
-myName=myName.toUpperCase().slice(0,12);
-  setBadge('CONNECTÉ','ok');
-  showWaitingRoom(code, state, numPlayers);
-  subscribeRoom(code);
+    const { error } = await supabaseClient.from('rooms').insert({
+        id: code,
+        state,
+        current_player: 1,
+        num_players: numPlayers,
+        status: 'waiting'
+    });
+
+    if (error) {
+        setLobbyErr('Erreur réseau – réessaie');
+        console.error(error);
+        return;
+    }
+
+    // Insert player record
+    await supabaseClient.from('room_players').insert({
+        room_id: code,
+        player_num: 1
+    });
+
+    setBadge('CONNECTÉ', 'ok');
+    showWaitingRoom(code, state, numPlayers);
+    subscribeRoom(code);
+
+    console.log(`[createRoom] Partie créée - roomId=${code}, myPlayerNum=${myPlayerNum}`);
 }
 
 async function joinRoom(){
