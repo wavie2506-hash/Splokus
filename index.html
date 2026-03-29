@@ -539,20 +539,16 @@ function setLobbyErr(msg){
 async function createRoom(){
   setBadge('CONNEXION...','');
   const code=generateCode();
-  const state=makeInitialState(numPlayers);
-  // Mark player 1 as connected
-  // Demander le nom AVANT tout
+  // Demander le nom AVANT
 myName = prompt('Ton nom ?') || 'JOUEUR 1';
 myName = myName.toUpperCase().slice(0,12);
 
-// Mark player 1 as connected
+const state = makeInitialState(numPlayers);
+
 state.connectedPlayers[1] = true;
 state.playerNames[1] = myName;
 
-roomId = code;
-myPlayerNum = 1;
-
-  const{error}=await supabaseClient.from('rooms').insert({
+const { error } = await supabaseClient.from('rooms').insert({
     id:code,
     state,
     current_player:1,
@@ -595,24 +591,36 @@ if(data.status==='playing'&&hasAllTraps){ setLobbyErr('Partie déjà en cours');
   await supabaseClient.from('room_players').insert({room_id:code,player_num:myNum});
 
   // Update state to mark this player connected
-  const state=data.state;
-  if(!state.connectedPlayers) state.connectedPlayers={};
-  // Demander le nom AVANT d'entrer
+  // Demander le nom AVANT tout
+// Demander le nom AVANT tout
 myName = prompt('Ton nom ?') || `JOUEUR ${myNum}`;
 myName = myName.toUpperCase().slice(0,12);
 
-// Update state
-state.connectedPlayers[myNum] = true;
+// Recharger le state le PLUS RÉCENT (ultra important)
+const { data: fresh } = await supabaseClient
+  .from('rooms')
+  .select('state')
+  .eq('id', code)
+  .single();
+
+const state = fresh.state;
+
+// Init si besoin
+if(!state.connectedPlayers) state.connectedPlayers = {};
 if(!state.playerNames) state.playerNames = {};
+
+// Update
+state.connectedPlayers[myNum] = true;
 state.playerNames[myNum] = myName;
 
-  // If all players joined, start the game
-  const allJoined=takenNums.size+1>=data.num_players;
-  if(allJoined){
-    await supabaseClient.from('rooms').update({state,status:'playing'}).eq('id',code);
-  } else {
-    await supabaseClient.from('rooms').update({state}).eq('id',code);
-  }
+// Vérifier si tout le monde est là
+const allJoined = Object.keys(state.connectedPlayers).length >= data.num_players;
+
+// ✅ UN SEUL update (très important)
+await supabaseClient.from('rooms').update({
+  state,
+  status: allJoined ? 'playing' : 'waiting'
+}).eq('id', code);
 
   roomId=code;
   myPlayerNum=myNum;
