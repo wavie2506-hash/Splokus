@@ -830,96 +830,55 @@ function onTrapCell(r, c, p) {
     if (trapConfirmed) return;
 
     const g = document.getElementById('trap-grid');
-    const cellEl = g.children[r * GRID + c];
-    if (!cellEl) return;
-
-    // Reset + highlight
     g.querySelectorAll('.cell').forEach(el => {
         el.style.outline = '';
         el.style.outlineOffset = '';
     });
 
+    const cellEl = g.children[r * GRID + c];
     cellEl.style.outline = `3px solid var(--p${p})`;
     cellEl.style.outlineOffset = '-3px';
 
     document.getElementById('trap-status').textContent = 'Case sélectionnée — reclique pour confirmer !';
 
-    const confirmClick = async function confirmHandler(e) {
-        e.stopImmediatePropagation();
+    cellEl.addEventListener('click', async () => {
         if (trapConfirmed) return;
-
         trapConfirmed = true;
 
         document.getElementById('trap-status').textContent = '✅ Piège posé ! En attente des autres joueurs...';
         g.querySelectorAll('.cell').forEach(el => {
             el.style.pointerEvents = 'none';
-            el.style.cursor = 'default';
         });
 
-                if (!roomId) {
+        if (!roomId) {
             console.error('roomId manquant !');
             return;
         }
 
-        const { data: roomData, error } = await supabaseClient
+        // Version SIMPLE qui marchait parfaitement
+        const { data } = await supabaseClient
             .from('rooms')
-            .select('state, num_players')
+            .select('state')
             .eq('id', roomId)
             .single();
 
-        if (error || !roomData) {
-            console.error('Erreur récupération room:', error);
-            return;
-        }
+        if (!data) return;
 
-        let state = roomData.state || {};
+        const state = data.state;
         if (!state.traps) state.traps = {};
         state.traps[p] = { r, c };
 
-        // === ICI LA CORRECTION PRINCIPALE ===
-        // On met à jour state + status (comme dans joinRoom) → ça force le realtime
-        const { error: updateError } = await supabaseClient
+        await supabaseClient
             .from('rooms')
-            .update({ 
-                state, 
-                status: 'playing'   // ← important pour que J1 reçoive l'update
-            })
+            .update({ state })
             .eq('id', roomId);
 
-        if (updateError) {
-            console.error('Update error:', updateError);
-            return;
+        // Vérification locale (dernier joueur)
+        if (Object.keys(state.traps).length >= state.numPlayers) {
+            startGameScreen(state);
         }
-
-        const trapCount = Object.keys(state.traps).length;
-        const needed = state.numPlayers || roomData.num_players || numPlayers || 2;
-
-        console.log(`Pièges posés : ${trapCount}/${needed} (après mon piège)`);
-
-        if (trapCount >= needed) {
-            console.log('Tous les pièges posés → démarrage local');
-            setTimeout(() => startGameScreen(state), 300);
-            return;
-        }
-
-        // Force refresh (on garde au cas où)
-        console.log('En attente des autres... Force refresh');
-        setTimeout(async () => {
-            const { data: fresh } = await supabaseClient
-                .from('rooms')
-                .select('state')
-                .eq('id', roomId)
-                .single();
-
-            if (fresh?.state) {
-                const freshCount = Object.keys(fresh.state.traps || {}).length;
-                console.log(`[Refresh] traps = ${freshCount}/${needed}`);
-                if (freshCount >= needed) {
-                    console.log('✅ Tous les pièges détectés via refresh → LANCEMENT');
-                    startGameScreen(fresh.state);
-                }
-            }
-        }, 800);
+    }, { once: true });
+}
     };
 
     cellEl.addEventListener('click', confirmClick, { once: true });
