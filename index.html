@@ -709,7 +709,7 @@ function subscribeRoom(code){
     });
 }
 function onRoomUpdate(row) {
-    if (!row || !row.state) return;
+    if (!row?.state) return;
 
     const state = row.state;
     lastKnownState = state;
@@ -720,16 +720,20 @@ function onRoomUpdate(row) {
 
     console.log(`[onRoomUpdate] Status=${row.status || 'unknown'}, traps=${trapCount}/${numPlayers}, myPlayerNum=${myPlayerNum}, hasAllTraps=${hasAllTraps}`);
 
-    // Phase waiting (lobby)
     if (row.status === 'waiting') {
         updatePlayersList(state, row.num_players);
         return;
     }
 
-    // === PHASE PIÈGES TERMINÉE ===
-    if (hasAllTraps) {
-        console.log(`[onRoomUpdate] TOUS LES PIÈGES SONT POSÉS (${trapCount}/${numPlayers}) → LANCEMENT DU JEU`);
+    // Force myPlayerNum si toujours 0 (sécurité)
+    if (myPlayerNum === 0) {
+        myPlayerNum = 1;
+        console.warn('[onRoomUpdate] myPlayerNum forcé à 1 (créateur)');
+    }
 
+    // Si tous les pièges sont là → on lance le jeu
+    if (hasAllTraps) {
+        console.log(`[onRoomUpdate] TOUS LES PIÈGES POSÉS (${trapCount}/${numPlayers}) → LANCEMENT JEU`);
         if (!document.getElementById('screen-game').classList.contains('visible') &&
             !document.getElementById('screen-end').classList.contains('visible')) {
             startGameScreen(state);
@@ -739,10 +743,13 @@ function onRoomUpdate(row) {
         return;
     }
 
-    // Si on est encore en phase pièges
-    const isOnTrapScreen = document.getElementById('screen-trap').classList.contains('visible');
-    if (isOnTrapScreen && row.status !== 'ended') {
-        console.log('[onRoomUpdate] Encore en attente de pièges → on reste sur l\'écran trap');
+    // Si le status est déjà 'playing' mais pas encore tous les pièges → on force l'écran trap
+    if ((row.status === 'playing' || !row.status) && trapCount < numPlayers) {
+        const isOnWaiting = document.getElementById('screen-waiting').classList.contains('visible');
+        if (isOnWaiting) {
+            console.log('[onRoomUpdate] Status=playing mais pièges incomplets → on passe à trap setup');
+            startTrapSetup(state);
+        }
     }
 }
 
