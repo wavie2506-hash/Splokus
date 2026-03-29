@@ -956,23 +956,25 @@ if(trapTriggered){
   state.cells=cellsBackup;
   state.turnIdx++;
   let trapGuard=0;
-while(trapGuard<state.numPlayers){
+  while(trapGuard<state.numPlayers){
     const nextP=state.turnOrder[state.turnIdx%state.turnOrder.length];
     if(state.skipQueue[nextP]){
       delete state.skipQueue[nextP];
-    state.turnIdx++;
-    trapGuard++;
-  } else { break; }
+      state.turnIdx++;
+      trapGuard++;
+    } else { break; }
   }
   state.lastSkippedPlayer=null;
   await supabaseClient.from('rooms')
-  .update({state, current_player:state.turnOrder[state.turnIdx%state.turnOrder.length], status:state.gameOver?'ended':'playing'})
-  .eq('id',roomId);
+    .update({state, current_player:state.turnOrder[state.turnIdx%state.turnOrder.length], status:state.gameOver?'ended':'playing'})
+    .eq('id',roomId);
   lastKnownState=state;
   window._trapMsgShown=null;
   banner(trapMsg,'var(--text)','#ff9900');
   renderGameState(state);
   return;
+}
+
 const lit=[];
 for(const[tr,tc]of captured){
   if(dead(tr,tc)) continue;
@@ -989,75 +991,64 @@ for(const[tr,tc]of captured){
   if(wasE) pl.empty++;
   lit.push([tr,tc]);
 }
+
 state.lastLit=lit;
 state.lastCell={r,c};
 state.lastBy=p;
 
-// Historique des derniers coups (taille = numPlayers)
 if(!state.recentMoves) state.recentMoves=[];
-// Si la case jouée est différente, on repart de zéro
 if(state.recentMoves.length>0){
   const last=state.recentMoves[state.recentMoves.length-1];
   if(last.r!==r||last.c!==c) state.recentMoves=[];
 }
 state.recentMoves.push({r,c,p});
 
-  // Block bonus
-  if(doBlock){
-    for(const[tr,tc]of lit){
-      const tc2=cells[idx(tr,tc)];
-      if(!tc2.blocked){ tc2.blocked=true; }
-    }
+if(doBlock){
+  for(const[tr,tc]of lit){
+    const tc2=cells[idx(tr,tc)];
+    if(!tc2.blocked){ tc2.blocked=true; }
   }
+}
 
-  // Update scores
-  for(let pp=1;pp<=state.numPlayers;pp++){
-    state.players[pp].score=cells.filter(c2=>c2.owner===pp).length;
-  }
+for(let pp=1;pp<=state.numPlayers;pp++){
+  state.players[pp].score=cells.filter(c2=>c2.owner===pp).length;
+}
 
-  // Check unlocks
-  for(let pp=1;pp<=state.numPlayers;pp++){
-    const ppl=state.players[pp];
-    if(!ppl.bonuses.skip.u&&ppl.empty>=BTHR.skip) ppl.bonuses.skip.u=true;
-    if(!ppl.bonuses.block.u&&ppl.empty>=BTHR.block) ppl.bonuses.block.u=true;
-    if(!ppl.bonuses.double.u&&ppl.empty>=BTHR.double) ppl.bonuses.double.u=true;
-  }
+for(let pp=1;pp<=state.numPlayers;pp++){
+  const ppl=state.players[pp];
+  if(!ppl.bonuses.skip.u&&ppl.empty>=BTHR.skip) ppl.bonuses.skip.u=true;
+  if(!ppl.bonuses.block.u&&ppl.empty>=BTHR.block) ppl.bonuses.block.u=true;
+  if(!ppl.bonuses.double.u&&ppl.empty>=BTHR.double) ppl.bonuses.double.u=true;
+}
 
-  state.turnIdx++;
-  let guard=0;
+state.turnIdx++;
+let guard=0;
 while(guard<state.numPlayers){
   const nextP=state.turnOrder[state.turnIdx%state.turnOrder.length];
   if(state.skipQueue[nextP]){
     delete state.skipQueue[nextP];
     state.turnIdx++;
     guard++;
-  } else {
-    break;
-  }
+  } else { break; }
 }
 
-  // Check game over
-  let empty=0;
-  for(let rr=1;rr<GRID-1;rr++)for(let cc=1;cc<GRID-1;cc++) if(cells[idx(rr,cc)].owner===0) empty++;
-  if(empty===0) state.gameOver=true;
+let empty=0;
+for(let rr=1;rr<GRID-1;rr++)for(let cc=1;cc<GRID-1;cc++) if(cells[idx(rr,cc)].owner===0) empty++;
+if(empty===0) state.gameOver=true;
 
-  state.cells=cells;
+state.cells=cells;
+state.lastSkippedPlayer=null;
+const newStatus=state.gameOver?'ended':'playing';
+const{error:upErr}=await supabaseClient.from('rooms')
+  .update({state, current_player:state.turnOrder[state.turnIdx%state.turnOrder.length], status:newStatus})
+  .eq('id',roomId);
 
-  // Push to Supabase
-  state.lastSkippedPlayer=null;
-  const newStatus=state.gameOver?'ended':'playing';
-  const{error:upErr}=await supabaseClient.from('rooms')
-    .update({state, current_player:state.turnOrder[state.turnIdx%state.turnOrder.length], status:newStatus})
-    .eq('id',roomId);
+if(upErr){ console.error('Update error',upErr); return; }
 
-  if(upErr){ console.error('Update error',upErr); return; }
-
-  // Render locally immediately (no need to wait for realtime)
-  lastKnownState=state;
-  renderGameState(state);
-  flashLit(lit);
+lastKnownState=state;
+renderGameState(state);
+flashLit(lit);
 }
-
 function flashLit(lit){
   if(!lit) return;
   lit.forEach(([r,c])=>{
