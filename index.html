@@ -634,18 +634,25 @@ const allJoined = Object.keys(state.connectedPlayers).length >= data.num_players
 
 // Update final
 await supabaseClient.from('rooms').update({
-  state,
-  status: allJoined ? 'playing' : 'waiting'
+    state,
+    status: allJoined ? 'playing' : 'waiting'
 }).eq('id', code);
 
-  
-  myPlayerNum=myNum;
-  numPlayers=data.num_players;
-  setBadge('CONNECTÉ','ok');
-  showWaitingRoom(code, state, data.num_players);
+myPlayerNum = myNum;
+numPlayers = data.num_players;
+
+setBadge('CONNECTÉ', 'ok');
+showWaitingRoom(code, state, data.num_players);
 subscribeRoom(code);
-if(allJoined){
-  setTimeout(()=>startTrapSetup(state), 300);
+
+// === LANCEMENT DES PIÈGES SI TOUT LE MONDE EST LÀ ===
+if (allJoined) {
+    console.log('[joinRoom] Tous les joueurs sont là → status=playing et lancement des pièges');
+
+    // Petit délai pour laisser le realtime se stabiliser
+    setTimeout(() => {
+        startTrapSetup(state);
+    }, 600);
 }
 }
 
