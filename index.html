@@ -767,58 +767,73 @@ function startTrapSetup(state){
   showScreen('screen-trap');
 }
   
-function onTrapCell(r,c,p){
-  if(trapConfirmed) return;
-  const g=document.getElementById('trap-grid');
-  g.querySelectorAll('.cell').forEach(el=>{ el.style.outline=''; el.style.outlineOffset=''; });
-  const cellEl=g.children[r*GRID+c];
-  cellEl.style.outline=`3px solid var(--p${p})`;
-  cellEl.style.outlineOffset='-3px';
-  document.getElementById('trap-status').textContent='Case sélectionnée — reclique pour confirmer !';
+function onTrapCell(r, c, p) {
+  if (trapConfirmed) return;
+
+  const g = document.getElementById('trap-grid');
+  g.querySelectorAll('.cell').forEach(el => {
+    el.style.outline = '';
+    el.style.outlineOffset = '';
+  });
+
+  const cellEl = g.children[r * GRID + c];
+  cellEl.style.outline = `3px solid var(--p${p})`;
+  cellEl.style.outlineOffset = '-3px';
+
+  document.getElementById('trap-status').textContent = 'Case sélectionnée — reclique pour confirmer !';
+
   cellEl.addEventListener('click', async () => {
     if (trapConfirmed) return;
     trapConfirmed = true;
+
     document.getElementById('trap-status').textContent = '✅ Piège posé ! En attente des autres joueurs...';
     g.querySelectorAll('.cell').forEach(el => { el.style.pointerEvents = 'none'; });
 
     if (!roomId) {
-        console.error('roomId manquant !');
-        return;
+      console.error('roomId manquant !');
+      return;
     }
 
-    // Une seule requête suffit !
+    // === MISE À JOUR DU PIÈGE ===
     const { data: roomData, error } = await supabaseClient
-        .from('rooms')
-        .select('state')
-        .eq('id', roomId)
-        .single();
+      .from('rooms')
+      .select('state, num_players')
+      .eq('id', roomId)
+      .single();
 
     if (error || !roomData) {
-        console.error('Erreur récupération room:', error);
-        return;
+      console.error('Erreur récupération room:', error);
+      return;
     }
 
-    let state = roomData.state;           // on utilise let pour pouvoir le modifier
-
+    let state = roomData.state || {};
     if (!state.traps) state.traps = {};
     state.traps[p] = { r, c };
 
-    // Mise à jour
     const { error: updateError } = await supabaseClient
-        .from('rooms')
-        .update({ state })
-        .eq('id', roomId);
+      .from('rooms')
+      .update({ state })
+      .eq('id', roomId);
 
     if (updateError) {
-        console.error('Erreur mise à jour piège:', updateError);
-        return;
+      console.error('Erreur mise à jour piège:', updateError);
+      return;
     }
 
-    // Tout le monde a posé son piège ?
-    if (Object.keys(state.traps).length >= state.numPlayers) {
-        startGameScreen(state);
+    // === VÉRIFICATION IMMÉDIATE (pour le dernier joueur) ===
+    const trapCount = Object.keys(state.traps).length;
+    const needed = state.numPlayers || roomData.num_players || numPlayers;
+
+    if (trapCount >= needed) {
+      console.log('Tous les pièges posés → lancement du jeu (local)');
+      startGameScreen(state);
+      return;
     }
-}, { once: true });
+
+    // Si on n'est pas le dernier, on reste sur l'écran et on attend le realtime
+    console.log(`Piège posé (${trapCount}/${needed}), en attente des autres...`);
+
+  }, { once: true });
 }
 
 // ════════════════════════════════════════
