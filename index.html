@@ -699,39 +699,43 @@ function subscribeRoom(code){
     });
 }
 function onRoomUpdate(row) {
+    if (!row || !row.state) return;
+
     const state = row.state;
-    if (!state) return;
-
     lastKnownState = state;
-    numPlayers = row.num_players || numPlayers;
+    numPlayers = row.num_players || numPlayers || 2;
 
-    console.log(`[onRoomUpdate] Status=${row.status}, traps=${Object.keys(state.traps||{}).length}/${numPlayers}, myPlayerNum=${myPlayerNum}`);
+    const trapCount = Object.keys(state.traps || {}).length;
+    const hasAllTraps = trapCount >= numPlayers;
 
+    console.log(`[onRoomUpdate] Status=${row.status || 'unknown'}, traps=${trapCount}/${numPlayers}, myPlayerNum=${myPlayerNum}, hasAllTraps=${hasAllTraps}`);
+
+    // Phase waiting (lobby)
     if (row.status === 'waiting') {
         updatePlayersList(state, row.num_players);
         return;
     }
 
-    // === NOUVELLE LOGIQUE PLUS ROBUSTE ===
-    const hasAllTraps = state.traps && Object.keys(state.traps).length >= numPlayers;
-
+    // === PHASE PIÈGES TERMINÉE ===
     if (hasAllTraps) {
-        console.log('[onRoomUpdate] Tous les pièges sont posés → passage au jeu');
+        console.log(`[onRoomUpdate] TOUS LES PIÈGES SONT POSÉS (${trapCount}/${numPlayers}) → LANCEMENT DU JEU`);
+
         if (!document.getElementById('screen-game').classList.contains('visible') &&
             !document.getElementById('screen-end').classList.contains('visible')) {
             startGameScreen(state);
         } else {
             renderGameState(state);
         }
-    } 
-    else if (row.status === 'playing' || !row.status) {
-        // Si on est encore en phase pièges mais que le status est déjà "playing"
-        const currentlyOnTrapScreen = document.getElementById('screen-trap').classList.contains('visible');
-        if (currentlyOnTrapScreen) {
-            console.log('[onRoomUpdate] Encore en phase pièges → on reste sur trap screen');
-        }
+        return;
+    }
+
+    // Si on est encore en phase pièges
+    const isOnTrapScreen = document.getElementById('screen-trap').classList.contains('visible');
+    if (isOnTrapScreen && row.status !== 'ended') {
+        console.log('[onRoomUpdate] Encore en attente de pièges → on reste sur l\'écran trap');
     }
 }
+
 // ════════════════════════════════════════
 //  START GAME
 // ════════════════════════════════════════
