@@ -426,6 +426,7 @@ let roomId='';         // 4-char code
 let gameOver=false;
 let realtimeSub=null;
 let lastKnownState=null; // to avoid re-renders on own updates
+let myName='';
 
 // ════════════════════════════════════════
 //  HELPERS
@@ -504,6 +505,7 @@ function makeInitialState(nPlayers){
     skipQueue:{},
     gameOver:false,
     connectedPlayers:{},
+    playerNames:{},
     traps: {}, // { playerNum: {r, c} }
   };
 }
@@ -534,13 +536,13 @@ function setLobbyErr(msg){
   document.getElementById('lobby-err').textContent=msg;
   setTimeout(()=>{document.getElementById('lobby-err').textContent='';},3000);
 }
-
 async function createRoom(){
   setBadge('CONNEXION...','');
   const code=generateCode();
   const state=makeInitialState(numPlayers);
   // Mark player 1 as connected
   state.connectedPlayers[1]=true;
+state.playerNames[1]=myName;
 
   const{error}=await supabaseClient.from('rooms').insert({
     id:code,
@@ -556,6 +558,8 @@ async function createRoom(){
 
   roomId=code;
   myPlayerNum=1;
+  myName=prompt('Ton nom ?')||'JOUEUR 1';
+myName=myName.toUpperCase().slice(0,12);
   setBadge('CONNECTÉ','ok');
   showWaitingRoom(code, state, numPlayers);
   subscribeRoom(code);
@@ -586,6 +590,8 @@ if(data.status==='playing'&&hasAllTraps){ setLobbyErr('Partie déjà en cours');
   const state=data.state;
   if(!state.connectedPlayers) state.connectedPlayers={};
   state.connectedPlayers[myNum]=true;
+if(!state.playerNames) state.playerNames={};
+state.playerNames[myNum]=myName;
 
   // If all players joined, start the game
   const allJoined=takenNums.size+1>=data.num_players;
