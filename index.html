@@ -426,7 +426,6 @@ let roomId='';         // 4-char code
 let gameOver=false;
 let realtimeSub=null;
 let lastKnownState=null; // to avoid re-renders on own updates
-let myName='';
 
 // ════════════════════════════════════════
 //  HELPERS
@@ -505,7 +504,6 @@ function makeInitialState(nPlayers){
     skipQueue:{},
     gameOver:false,
     connectedPlayers:{},
-    playerNames:{},
     traps: {}, // { playerNum: {r, c} }
   };
 }
@@ -536,48 +534,31 @@ function setLobbyErr(msg){
   document.getElementById('lobby-err').textContent=msg;
   setTimeout(()=>{document.getElementById('lobby-err').textContent='';},3000);
 }
-async function createRoom() {
-    setBadge('CONNEXION...', '');
 
-    const code = generateCode();
-    roomId = code;
+async function createRoom(){
+  setBadge('CONNEXION...','');
+  const code=generateCode();
+  const state=makeInitialState(numPlayers);
+  // Mark player 1 as connected
+  state.connectedPlayers[1]=true;
 
-    // === IMPORTANT : on définit tout de suite qui est le joueur 1 ===
-    myPlayerNum = 1;
+  const{error}=await supabaseClient.from('rooms').insert({
+    id:code,
+    state,
+    current_player:1,
+    num_players:numPlayers,
+    status:'waiting'
+  });
+  if(error){ setLobbyErr('Erreur réseau – réessaie'); console.error(error); return; }
 
-    // Demander le nom AVANT
-    myName = prompt('Ton nom ?') || 'JOUEUR 1';
-    myName = myName.toUpperCase().slice(0, 12);
+  // Also insert player record
+  await supabaseClient.from('room_players').insert({room_id:code,player_num:1});
 
-    const state = makeInitialState(numPlayers);
-    state.connectedPlayers[1] = true;
-    state.playerNames[1] = myName;
-
-    const { error } = await supabaseClient.from('rooms').insert({
-        id: code,
-        state,
-        current_player: 1,
-        num_players: numPlayers,
-        status: 'waiting'
-    });
-
-    if (error) {
-        setLobbyErr('Erreur réseau – réessaie');
-        console.error(error);
-        return;
-    }
-
-    // Insert player record
-    await supabaseClient.from('room_players').insert({
-        room_id: code,
-        player_num: 1
-    });
-
-    setBadge('CONNECTÉ', 'ok');
-    showWaitingRoom(code, state, numPlayers);
-    subscribeRoom(code);
-
-    console.log(`[createRoom] Partie créée - roomId=${code}, myPlayerNum=${myPlayerNum}`);
+  roomId=code;
+  myPlayerNum=1;
+  setBadge('CONNECTÉ','ok');
+  showWaitingRoom(code, state, numPlayers);
+  subscribeRoom(code);
 }
 
 async function joinRoom(){
@@ -600,59 +581,28 @@ if(data.status==='playing'&&hasAllTraps){ setLobbyErr('Partie déjà en cours');
 
   // Insert player
   await supabaseClient.from('room_players').insert({room_id:code,player_num:myNum});
-// Demander le nom AVANT tout
-if(!myName){
-  myName = prompt('Ton nom ?') || `JOUEUR ${myNum}`;
-  myName = myName.toUpperCase().slice(0,12);
-}
 
-// Insert player (UNE SEULE FOIS)
-await supabaseClient.from('room_players').insert({
-  room_id: code,
-  player_num: myNum
-});
+  // Update state to mark this player connected
+  const state=data.state;
+  if(!state.connectedPlayers) state.connectedPlayers={};
+  state.connectedPlayers[myNum]=true;
 
-// Recharger le state le PLUS RÉCENT
-const { data: fresh } = await supabaseClient
-  .from('rooms')
-  .select('state')
-  .eq('id', code)
-  .single();
+  // If all players joined, start the game
+  const allJoined=takenNums.size+1>=data.num_players;
+  if(allJoined){
+    await supabaseClient.from('rooms').update({state,status:'playing'}).eq('id',code);
+  } else {
+    await supabaseClient.from('rooms').update({state}).eq('id',code);
+  }
 
-const state = fresh.state;
-
-// Init si besoin
-if(!state.connectedPlayers) state.connectedPlayers = {};
-if(!state.playerNames) state.playerNames = {};
-
-// Update
-state.connectedPlayers[myNum] = true;
-state.playerNames[myNum] = myName;
-
-// Check si tous là
-const allJoined = Object.keys(state.connectedPlayers).length >= data.num_players;
-
-// Update final
-await supabaseClient.from('rooms').update({
-    state,
-    status: allJoined ? 'playing' : 'waiting'
-}).eq('id', code);
-
-myPlayerNum = myNum;
-numPlayers = data.num_players;
-
-setBadge('CONNECTÉ', 'ok');
-showWaitingRoom(code, state, data.num_players);
+  roomId=code;
+  myPlayerNum=myNum;
+  numPlayers=data.num_players;
+  setBadge('CONNECTÉ','ok');
+  showWaitingRoom(code, state, data.num_players);
 subscribeRoom(code);
-
-// === LANCEMENT DES PIÈGES SI TOUT LE MONDE EST LÀ ===
-if (allJoined) {
-    console.log('[joinRoom] Tous les joueurs sont là → status=playing et lancement des pièges');
-
-    // Petit délai pour laisser le realtime se stabiliser
-    setTimeout(() => {
-        startTrapSetup(state);
-    }, 600);
+if(allJoined){
+  setTimeout(()=>startTrapSetup(state), 300);
 }
 }
 
@@ -676,9 +626,7 @@ function updatePlayersList(state, nPlayers){
     div.className=`player-slot ps${p}${filled?' filled':''}`;
     div.innerHTML=`
       <div class="slot-dot"></div>
-      <div class="slot-name">
-  ${filled ? ((state.playerNames?.[p]) || PNAMES[p]) : 'En attente...'}
-</div>
+      <div class="slot-name">${filled?PNAMES[p]:'En attente...'}</div>
       ${p===myPlayerNum?'<div class="slot-you">← C\'EST TOI</div>':''}
     `;
     list.appendChild(div);
@@ -715,51 +663,36 @@ function subscribeRoom(code){
       else if(status==='CHANNEL_ERROR'||status==='TIMED_OUT') setBadge('HORS LIGNE','err');
     });
 }
-function onRoomUpdate(row) {
-    if (!row?.state) return;
+function onRoomUpdate(row){
+  const state=row.state;
+  if(!state) return;
+  lastKnownState=state;
 
-    const state = row.state;
-    lastKnownState = state;
-    numPlayers = row.num_players || numPlayers || 2;
+  if(row.status==='waiting'){
+    updatePlayersList(state, row.num_players);
+    return;
+  }
 
-    const trapCount = Object.keys(state.traps || {}).length;
-    const hasAllTraps = trapCount >= numPlayers;
+  if(row.status==='playing' || row.status==='ended'){
+    numPlayers=row.num_players||numPlayers;
+    const hasAllTraps=state.traps&&Object.keys(state.traps).length>=numPlayers;
 
-    console.log(`[onRoomUpdate] Status=${row.status || 'unknown'}, traps=${trapCount}/${numPlayers}, myPlayerNum=${myPlayerNum}, hasAllTraps=${hasAllTraps}`);
-
-    if (row.status === 'waiting') {
-        updatePlayersList(state, row.num_players);
-        return;
+    if(hasAllTraps){
+      if(!document.getElementById('screen-game').classList.contains('visible')&&
+         !document.getElementById('screen-end').classList.contains('visible')){
+        startGameScreen(state);
+      } else {
+        renderGameState(state);
+      }
+    } else {
+      const currentlyWaiting=document.getElementById('screen-waiting').classList.contains('visible');
+      if(currentlyWaiting){
+        startTrapSetup(state);
+      }
     }
-
-    // Force myPlayerNum si toujours 0 (sécurité)
-    if (myPlayerNum === 0) {
-        myPlayerNum = 1;
-        console.warn('[onRoomUpdate] myPlayerNum forcé à 1 (créateur)');
-    }
-
-    // Si tous les pièges sont là → on lance le jeu
-    if (hasAllTraps) {
-        console.log(`[onRoomUpdate] TOUS LES PIÈGES POSÉS (${trapCount}/${numPlayers}) → LANCEMENT JEU`);
-        if (!document.getElementById('screen-game').classList.contains('visible') &&
-            !document.getElementById('screen-end').classList.contains('visible')) {
-            startGameScreen(state);
-        } else {
-            renderGameState(state);
-        }
-        return;
-    }
-
-    // Si le status est déjà 'playing' mais pas encore tous les pièges → on force l'écran trap
-    if ((row.status === 'playing' || !row.status) && trapCount < numPlayers) {
-        const isOnWaiting = document.getElementById('screen-waiting').classList.contains('visible');
-        if (isOnWaiting) {
-            console.log('[onRoomUpdate] Status=playing mais pièges incomplets → on passe à trap setup');
-            startTrapSetup(state);
-        }
-    }
+    return;
+  }
 }
-
 // ════════════════════════════════════════
 //  START GAME
 // ════════════════════════════════════════
@@ -768,120 +701,60 @@ function startGameScreen(state){
   renderGameState(state);
   showScreen('screen-game');
 }
+// ══ TRAP SETUP ══
+let trapConfirmed=false;
 
-
-function buildTrapGrid(p) {
-    const g = document.getElementById('trap-grid');
-    if (!g) {
-        console.error('trap-grid introuvable !');
-        return;
+function buildTrapGrid(p){
+  const g=document.getElementById('trap-grid'); g.innerHTML='';
+  for(let r=0;r<GRID;r++)for(let c=0;c<GRID;c++){
+    const d=document.createElement('div');
+    d.className='cell';
+    if(dead(r,c)){
+      d.classList.add('dead');
+    } else {
+      d.classList.add('empty');
+      d.style.cursor='crosshair';
+      d.addEventListener('click',()=>onTrapCell(r,c,p));
     }
-    g.innerHTML = '';
-
-    console.log(`[buildTrapGrid] Construction de la grille pour joueur ${p} (GRID=${GRID})`);
-
-    for (let r = 0; r < GRID; r++) {
-        for (let c = 0; c < GRID; c++) {
-            const d = document.createElement('div');
-            d.className = 'cell';
-            if (dead(r, c)) {
-                d.classList.add('dead');
-            } else {
-                d.classList.add('empty');
-                d.style.cursor = 'crosshair';
-                // Listener avec log clair
-                d.addEventListener('click', () => {
-                    console.log(`→ Clic détecté sur case [${r},${c}] par joueur ${p}`);
-                    onTrapCell(r, c, p);
-                });
-            }
-            g.appendChild(d);
-        }
-    }
+    g.appendChild(d);
+  }
 }
 
-function startTrapSetup(state) {
-    console.log('[startTrapSetup] Appelée avec myPlayerNum =', myPlayerNum, 'state.traps =', state.traps);
 
-    // Correction critique pour J1
-    if (!myPlayerNum || myPlayerNum < 1) {
-        console.warn('myPlayerNum invalide, fallback à 1 (créateur)');
-        myPlayerNum = 1;
-    }
-
-    trapConfirmed = false;
-
-    const p = myPlayerNum;
-
-    const title = document.getElementById('trap-title');
-    title.textContent = (state.playerNames && state.playerNames[p]) || PNAMES[p] || `JOUEUR ${p}`;
-    title.style.color = `var(--p${p})`;
-
-    buildTrapGrid(p);
-
-    document.getElementById('trap-status').textContent = 'Clique une case pour poser ton piège';
-    showScreen('screen-trap');
-
-    console.log(`[startTrapSetup] Grille construite pour joueur ${p}`);
+function startTrapSetup(state){
+  trapConfirmed=false;
+  const p=myPlayerNum;
+  const title=document.getElementById('trap-title');
+  title.textContent=PNAMES[p];
+  title.style.color=`var(--p${p})`;
+  buildTrapGrid(p);
+  document.getElementById('trap-status').textContent='Clique une case pour poser ton piège';
+  showScreen('screen-trap');
 }
   
-
-function onTrapCell(r, c, p) {
-    if (trapConfirmed) return;
-
-    const g = document.getElementById('trap-grid');
-    g.querySelectorAll('.cell').forEach(el => {
-        el.style.outline = '';
-        el.style.outlineOffset = '';
-    });
-
-    const cellEl = g.children[r * GRID + c];
-    cellEl.style.outline = `3px solid var(--p${p})`;
-    cellEl.style.outlineOffset = '-3px';
-
-    document.getElementById('trap-status').textContent = 'Case sélectionnée — reclique pour confirmer !';
-
-    cellEl.addEventListener('click', async () => {
-        if (trapConfirmed) return;
-        trapConfirmed = true;
-
-        document.getElementById('trap-status').textContent = '✅ Piège posé ! En attente des autres joueurs...';
-        g.querySelectorAll('.cell').forEach(el => {
-            el.style.pointerEvents = 'none';
-        });
-
-        if (!roomId) {
-            console.error('roomId manquant !');
-            return;
-        }
-
-        // Version SIMPLE qui marchait parfaitement
-        const { data } = await supabaseClient
-            .from('rooms')
-            .select('state')
-            .eq('id', roomId)
-            .single();
-
-        if (!data) return;
-
-        const state = data.state;
-        if (!state.traps) state.traps = {};
-        state.traps[p] = { r, c };
-
-        await supabaseClient
-            .from('rooms')
-            .update({ state })
-            .eq('id', roomId);
-
-        // Vérification locale (dernier joueur)
-        if (Object.keys(state.traps).length >= state.numPlayers) {
-            startGameScreen(state);
-        }
-    }, { once: true });
-}
-    };
-
-    cellEl.addEventListener('click', confirmClick, { once: true });
+function onTrapCell(r,c,p){
+  if(trapConfirmed) return;
+  const g=document.getElementById('trap-grid');
+  g.querySelectorAll('.cell').forEach(el=>{ el.style.outline=''; el.style.outlineOffset=''; });
+  const cellEl=g.children[r*GRID+c];
+  cellEl.style.outline=`3px solid var(--p${p})`;
+  cellEl.style.outlineOffset='-3px';
+  document.getElementById('trap-status').textContent='Case sélectionnée — reclique pour confirmer !';
+  cellEl.addEventListener('click', async ()=>{
+    if(trapConfirmed) return;
+    trapConfirmed=true;
+    document.getElementById('trap-status').textContent='✅ Piège posé ! En attente des autres joueurs...';
+    g.querySelectorAll('.cell').forEach(el=>{ el.style.pointerEvents='none'; });
+    const{data}=await supabaseClient.from('rooms').select('state').eq('id',roomId).single();
+    if(!data) return;
+    const state=data.state;
+    if(!state.traps) state.traps={};
+    state.traps[p]={r,c};
+    await supabaseClient.from('rooms').update({state}).eq('id',roomId);
+    if(Object.keys(state.traps).length>=state.numPlayers){
+      startGameScreen(state);
+    }
+  },{once:true});
 }
 
 // ════════════════════════════════════════
@@ -920,8 +793,7 @@ if(state.lastTrapMsg && state.lastTrapMsg!==window._trapMsgShown){
   // Header
   const header=document.getElementById('game-header');
   header.dataset.p=myPlayerNum;
-  document.getElementById('gh-name').textContent =
-  (state.playerNames && state.playerNames[myPlayerNum]) || PNAMES[myPlayerNum];
+  document.getElementById('gh-name').textContent=PNAMES[myPlayerNum];
   document.getElementById('gh-score').textContent=(state.players[myPlayerNum]||{}).score||0;
   document.getElementById('gh-badge').textContent=isMyTurn?'MON TOUR':'En attente';
 
@@ -932,9 +804,7 @@ if(state.lastTrapMsg && state.lastTrapMsg!==window._trapMsgShown){
     ti.textContent='C\'EST TON TOUR — JOUE !';
   } else {
     ti.className='turn-indicator their-turn';
-    ti.textContent = `Tour de ${
-  (state.playerNames && state.playerNames[currentP]) || PNAMES[currentP]
-}...`;
+    ti.textContent=`Tour de ${PNAMES[currentP]}...`;
   }
 
   // Mini scores
@@ -942,9 +812,7 @@ if(state.lastTrapMsg && state.lastTrapMsg!==window._trapMsgShown){
   for(let p=1;p<=state.numPlayers;p++){
     const d=document.createElement('div');
     d.className=`mini-score ms${p}`;
-    d.textContent = `${
-  ((state.playerNames?.[p]) || PNAMES[p]).replace('JOUEUR ','J')
-}: ${(state.players[p]||{}).score||0}`;
+    d.textContent=`${PNAMES[p].replace('JOUEUR ','J')}: ${(state.players[p]||{}).score||0}`;
     as.appendChild(d);
   }
 
@@ -1076,10 +944,10 @@ for(const[ownerStr, trap] of Object.entries(traps)){
   trapTriggered=true;
   if(owner===p){
     state.players[p].score=Math.max(0, state.players[p].score-7);
-    trapMsg=`💀 ${(state.playerNames && state.playerNames[p]) || (state.playerNames?.[p]) || PNAMES[p]} A TOUCHÉ SON PROPRE PIÈGE !\n-7 pts`;
+    trapMsg=`💀 ${PNAMES[p]} A TOUCHÉ SON PROPRE PIÈGE !\n-7 pts`;
   } else {
     state.players[owner].score+=5;
-    trapMsg=`⚡ ${(state.playerNames && state.playerNames[p]) || (state.playerNames?.[p]) || PNAMES[p]} A DÉCLENCHÉ LE PIÈGE\nDE ${PNAMES[owner]} !\n+5 pts pour ${PNAMES[owner]}`;
+    trapMsg=`⚡ ${PNAMES[p]} A DÉCLENCHÉ LE PIÈGE\nDE ${PNAMES[owner]} !\n+5 pts pour ${PNAMES[owner]}`;
   }
 }
 
@@ -1312,7 +1180,7 @@ function endGame(state){
     const d=document.createElement('div');
     d.className='end-row'+(i===0&&!tie?` winner w${p}`:'');
     d.style.color=`var(--p${p})`;
-    d.textContent=`${i+1}. ${(state.playerNames && state.playerNames[p]) || (state.playerNames?.[p]) || PNAMES[p]} — ${(state.players[p]||{}).score||0} cases`;
+    d.textContent=`${i+1}. ${PNAMES[p]} — ${(state.players[p]||{}).score||0} cases`;
     sc.appendChild(d);
   });
   showScreen('screen-end');
@@ -1344,13 +1212,7 @@ window.addEventListener('load',()=>{
   if(roomParam){
     document.getElementById('join-input').value=roomParam.toUpperCase();
     // Auto-trigger join after a tiny delay
-    setTimeout(()=>{
-  if(!myName){
-    myName = prompt('Ton nom ?') || 'JOUEUR';
-    myName = myName.toUpperCase().slice(0,12);
-  }
-  joinRoom();
-},300);
+    setTimeout(()=>joinRoom(),300);
   }
 });
 </script>
