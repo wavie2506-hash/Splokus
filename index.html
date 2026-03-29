@@ -780,11 +780,22 @@ function onTrapCell(r,c,p){
     trapConfirmed=true;
     document.getElementById('trap-status').textContent='✅ Piège posé ! En attente des autres joueurs...';
     g.querySelectorAll('.cell').forEach(el=>{ el.style.pointerEvents='none'; });
-    const{data}=await supabaseClient.from('rooms').select('state').eq('id',roomId).single();
-    if(!roomId){
+    // Vérifier AVANT
+if(!roomId){
   console.error('roomId manquant !');
   return;
 }
+
+// ⚠️ changer le nom de data pour éviter conflit
+const { data: roomData } = await supabaseClient
+  .from('rooms')
+  .select('state')
+  .eq('id', roomId)
+  .single();
+
+if(!roomData) return;
+
+const state = roomData.state;
 
 const { data } = await supabaseClient
   .from('rooms')
