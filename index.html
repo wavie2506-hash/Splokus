@@ -911,7 +911,9 @@ const isSteal=
     captured=[...state.lastLit,...extras].filter(([tr,tc])=>!dead(tr,tc)&&!cells[idx(tr,tc)].blocked);
     setLog(`⚡ Vol de territoire + 2 bonus !`);
   } else {
-    const trapCells=Object.values(state.traps||{}).map(t=>[Number(t.r),Number(t.c)]);
+    const trapCells=Object.entries(state.traps||{})
+  .filter(([owner])=>parseInt(owner)!==p)
+  .map(([,t])=>[Number(t.r),Number(t.c)]);
 captured=organicSpread(cells, r, c, spread, trapCells);;
     setLog(`+${captured.length} cases capturées`);
   }
