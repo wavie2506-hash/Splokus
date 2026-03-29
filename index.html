@@ -775,31 +775,50 @@ function onTrapCell(r,c,p){
   cellEl.style.outline=`3px solid var(--p${p})`;
   cellEl.style.outlineOffset='-3px';
   document.getElementById('trap-status').textContent='Case sélectionnée — reclique pour confirmer !';
-  cellEl.addEventListener('click', async ()=>{
-    if(trapConfirmed) return;
-    trapConfirmed=true;
-    document.getElementById('trap-status').textContent='✅ Piège posé ! En attente des autres joueurs...';
-    g.querySelectorAll('.cell').forEach(el=>{ el.style.pointerEvents='none'; });
-    // Vérifier AVANT
-if(!roomId){
-  console.error('roomId manquant !');
-  return;
-}
+  cellEl.addEventListener('click', async () => {
+    if (trapConfirmed) return;
+    trapConfirmed = true;
+    document.getElementById('trap-status').textContent = '✅ Piège posé ! En attente des autres joueurs...';
+    g.querySelectorAll('.cell').forEach(el => { el.style.pointerEvents = 'none'; });
 
-const { data } = await supabaseClient
-  .from('rooms')
-  .select('state')
-  .eq('id', roomId)
-  .single();
-    if(!data) return;
-    const state=data.state;
-    if(!state.traps) state.traps={};
-    state.traps[p]={r,c};
-    await supabaseClient.from('rooms').update({state}).eq('id',roomId);
-    if(Object.keys(state.traps).length>=state.numPlayers){
-      startGameScreen(state);
+    if (!roomId) {
+        console.error('roomId manquant !');
+        return;
     }
-  },{once:true});
+
+    // Une seule requête suffit !
+    const { data: roomData, error } = await supabaseClient
+        .from('rooms')
+        .select('state')
+        .eq('id', roomId)
+        .single();
+
+    if (error || !roomData) {
+        console.error('Erreur récupération room:', error);
+        return;
+    }
+
+    let state = roomData.state;           // on utilise let pour pouvoir le modifier
+
+    if (!state.traps) state.traps = {};
+    state.traps[p] = { r, c };
+
+    // Mise à jour
+    const { error: updateError } = await supabaseClient
+        .from('rooms')
+        .update({ state })
+        .eq('id', roomId);
+
+    if (updateError) {
+        console.error('Erreur mise à jour piège:', updateError);
+        return;
+    }
+
+    // Tout le monde a posé son piège ?
+    if (Object.keys(state.traps).length >= state.numPlayers) {
+        startGameScreen(state);
+    }
+}, { once: true });
 }
 
 // ════════════════════════════════════════
