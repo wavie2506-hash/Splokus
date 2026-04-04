@@ -474,10 +474,11 @@ function makeInitialState(nPlayers){
   const players={};
   for(let p=1;p<=nPlayers;p++) players[p]={
     score:0,empty:0,
-    bonuses:{
-      skip:{u:false,used:false,act:false},
-      block:{u:false,used:false,act:false},
-      mine:{u:false,used:false,act:false}
+    bonuses: {
+  skip:  {u:false, used:false, act:false},
+  block: {u:false, used:false, act:false},
+  mine:  {u:false, used:false, act:false, canUnlock: true}   // ← ajoute ça
+
     }
   };
   return {
@@ -893,10 +894,25 @@ async function onCell(r,c){
   //  Normal move
   // ─────────────────────────────────────
    // Consume mine bonus flag
-  const doMine=pl.bonuses.mine.act;
-  if(doMine){pl.bonuses.mine.act=false;pl.bonuses.mine.used=true;}
-  const doBlock=pl.bonuses.block.act;
-  if(doBlock){pl.bonuses.block.act=false;pl.bonuses.block.used=true;}
+    // Consume mine & block bonus
+  const doMine = pl.bonuses.mine.act;
+  if (doMine) {
+    pl.bonuses.mine.act = false;
+    pl.bonuses.mine.used = true;
+
+    // RÈGLE SIMPLE : quand quelqu'un utilise les mines, les autres ne peuvent plus les débloquer
+    for (let pp = 1; pp <= state.numPlayers; pp++) {
+      if (pp !== p && state.players[pp]) {
+        state.players[pp].bonuses.mine.canUnlock = false;
+      }
+    }
+  }
+
+  const doBlock = pl.bonuses.block.act;
+  if (doBlock) {
+    pl.bonuses.block.act = false;
+    pl.bonuses.block.used = true;
+  }
 
   // ─────────────────────────────────────
   //  Détection du steal + capture unifiée (5 précédentes + 2 random)
@@ -1035,11 +1051,20 @@ async function onCell(r,c){
     state.players[pp].score=cells.filter(c2=>c2.owner===pp).length;
 
   // Bonus unlock
+    // Bonus unlock
   for(let pp=1;pp<=state.numPlayers;pp++){
-    const ppl=state.players[pp];
-    if(!ppl.bonuses.skip.u&&ppl.empty>=BTHR.skip) ppl.bonuses.skip.u=true;
-    if(!ppl.bonuses.block.u&&ppl.empty>=BTHR.block) ppl.bonuses.block.u=true;
-    if(!ppl.bonuses.mine.u&&ppl.empty>=BTHR.mine) ppl.bonuses.mine.u=true;
+    const ppl = state.players[pp];
+    if (!ppl) continue;
+
+    if (!ppl.bonuses.skip.u && ppl.empty >= BTHR.skip) ppl.bonuses.skip.u = true;
+    if (!ppl.bonuses.block.u && ppl.empty >= BTHR.block) ppl.bonuses.block.u = true;
+
+    // Mines : on débloque seulement si canUnlock n'a pas été mis à false
+    if (!ppl.bonuses.mine.u && 
+        (ppl.bonuses.mine.canUnlock !== false) && 
+        ppl.empty >= BTHR.mine) {
+      ppl.bonuses.mine.u = true;
+    }
   }
 
   // Advance turn
