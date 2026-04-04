@@ -44,16 +44,6 @@ body {
 .screen.visible { display: flex; }
 .logo {
   font-family:'Bebas Neue',sans-serif;
-  font-size: clamp(28px, 5vw, 48px);
-  letter-spacing: 10px;
-  background: linear-gradient(120deg,var(--p1) 0%,#ff9900 40%,var(--p2) 70%,var(--p3) 100%);
-  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
-  margin-bottom: 0;
-}
-.subtitle { font-size:9px; letter-spacing:5px; color:var(--muted); text-transform:uppercase; }
-
-.logo {
-  font-family:'Bebas Neue',sans-serif;
   font-size:clamp(42px,7vw,72px);
   letter-spacing:10px;
   background:linear-gradient(120deg,var(--p1) 0%,#ff9900 40%,var(--p2) 70%,var(--p3) 100%);
@@ -62,7 +52,7 @@ body {
 }
 .subtitle { font-size:9px; letter-spacing:5px; color:var(--muted); text-transform:uppercase; }
 
-/* ══ LOBBY SCREEN ══ */
+/* ══ LOBBY ══ */
 #screen-lobby { justify-content:center; gap:20px; }
 .lobby-section { display:flex; flex-direction:column; align-items:center; gap:10px; }
 .lobby-label { font-size:9px; letter-spacing:4px; color:var(--muted); text-transform:uppercase; }
@@ -73,7 +63,6 @@ body {
   background:transparent; color:var(--muted); cursor:pointer; transition:all .2s;
 }
 .setup-btn.active, .setup-btn:hover { border-color:var(--text); color:var(--text); background:rgba(255,255,255,.05); }
-
 .primary-btn {
   font-family:'Bebas Neue',sans-serif; font-size:28px; letter-spacing:5px;
   padding:12px 44px; border-radius:10px;
@@ -83,9 +72,7 @@ body {
 }
 .primary-btn:hover { transform:scale(1.04); box-shadow:0 0 36px rgba(255,48,96,.5); }
 .primary-btn:disabled { opacity:.4; cursor:default; transform:none; box-shadow:none; }
-
 .or-divider { font-size:9px; letter-spacing:4px; color:var(--muted); }
-
 .join-row { display:flex; gap:8px; align-items:center; }
 .code-input {
   font-family:'Bebas Neue',sans-serif; font-size:26px; letter-spacing:6px;
@@ -115,9 +102,7 @@ body {
   background:linear-gradient(120deg,var(--p1),var(--p2));
   -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
 }
-.share-url {
-  font-size:9px; color:var(--muted); word-break:break-all; text-align:center; max-width:300px; cursor:pointer;
-}
+.share-url { font-size:9px; color:var(--muted); word-break:break-all; text-align:center; max-width:300px; cursor:pointer; }
 .share-url:hover { color:var(--text); }
 .copy-btn {
   font-family:'Space Mono',monospace; font-size:9px; letter-spacing:2px;
@@ -126,7 +111,6 @@ body {
 }
 .copy-btn:hover { border-color:var(--text); color:var(--text); }
 .copy-btn.copied { border-color:var(--p3); color:var(--p3); }
-
 .players-list { display:flex; flex-direction:column; gap:8px; align-items:center; min-width:240px; }
 .player-slot {
   display:flex; align-items:center; gap:10px;
@@ -150,7 +134,7 @@ body {
 .waiting-msg { font-size:9px; letter-spacing:3px; color:var(--muted); animation:blink 1.4s infinite; }
 @keyframes blink { 0%,100%{opacity:.4} 50%{opacity:1} }
 
-/* ══ GAME SCREEN ══ */
+/* ══ GAME ══ */
 #screen-game { padding-top:16px; gap:0; }
 .game-header {
   display:flex; align-items:center; justify-content:space-between;
@@ -176,7 +160,6 @@ body {
 .game-header[data-p="1"] .gh-score { color:var(--p1); }
 .game-header[data-p="2"] .gh-score { color:var(--p2); }
 .game-header[data-p="3"] .gh-score { color:var(--p3); }
-
 .turn-indicator {
   font-size:9px; letter-spacing:3px; text-align:center;
   padding:6px 20px; border-radius:20px;
@@ -186,7 +169,6 @@ body {
 .turn-indicator.their-turn { background:rgba(255,255,255,.03); color:var(--muted); border:1px solid #1a1a28; }
 .turn-indicator.my-turn::before { content:'▶ '; color:#aaff00; }
 .turn-indicator.their-turn::before { content:'⏳ '; }
-
 .all-scores { display:flex; gap:10px; margin-bottom:8px; flex-wrap:wrap; justify-content:center; }
 .mini-score {
   font-size:9px; letter-spacing:2px; padding:3px 8px;
@@ -195,7 +177,6 @@ body {
 .mini-score.ms1 { color:var(--p1); border-color:rgba(255,48,96,.3); }
 .mini-score.ms2 { color:var(--p2); border-color:rgba(0,224,255,.3); }
 .mini-score.ms3 { color:var(--p3); border-color:rgba(170,255,0,.3); }
-
 #log { font-size:9px; color:var(--muted); letter-spacing:1px; height:13px; margin-bottom:7px; text-align:center; }
 
 #grid {
@@ -208,16 +189,14 @@ body {
   display: grid;
   grid-template-columns: repeat(11, var(--cell));
   grid-template-rows: repeat(11, var(--cell));
-  gap: 2px;
-  background: #040406;
-  padding: 2px;
-  border-radius: 6px;
-  border: 1px solid #181825;
+  gap: 2px; background: #040406; padding: 2px;
+  border-radius: 6px; border: 1px solid #181825;
 }
 .cell {
   width:var(--cell); height:var(--cell); border-radius:3px; cursor:pointer;
   transition:background .15s,transform .1s,box-shadow .18s;
   display:flex; align-items:center; justify-content:center; user-select:none;
+  position:relative;
 }
 .cell.dead { background:#0c0c14; border:1px solid #14141e; cursor:default; pointer-events:none; opacity:.3; }
 .cell.empty { background:#1a1a28; border:1px solid #252538; }
@@ -234,6 +213,33 @@ body {
 .cell.flash { animation:cf .35s ease; }
 @keyframes cf { 0%{transform:scale(1.32)} 100%{transform:scale(1)} }
 
+/* ══ MINED CELLS — visible only to the mine owner ══ */
+.cell.mined-own {
+  background: #1a1228 !important;
+  border: 1px solid #8800cc !important;
+  box-shadow: 0 0 10px rgba(160,0,220,.5) !important;
+  animation: mine-pulse 1.4s ease-in-out infinite;
+}
+.cell.mined-own::after {
+  content: '💣';
+  font-size: 10px;
+  pointer-events: none;
+}
+/* Origin cell (exact click) — extra glow so owner can remember */
+.cell.mined-own.mine-origin {
+  border: 2px solid #cc00ff !important;
+  box-shadow: 0 0 16px rgba(200,0,255,.7) !important;
+}
+.cell.mined-own.mine-origin::after {
+  content: '💜';
+  font-size: 11px;
+}
+@keyframes mine-pulse {
+  0%,100% { box-shadow: 0 0 6px rgba(160,0,220,.3); }
+  50%      { box-shadow: 0 0 16px rgba(160,0,220,.8); }
+}
+
+/* ══ BONUS CARDS ══ */
 .bonus-wrap { margin-top:12px; width:100%; max-width:520px; }
 .bonus-title-row { font-size:9px; letter-spacing:4px; color:var(--muted); text-align:center; margin-bottom:7px; text-transform:uppercase; }
 .bonus-row { display:flex; gap:8px; justify-content:center; flex-wrap:wrap; }
@@ -249,6 +255,7 @@ body {
 .bcard.ab1 { border-color:var(--p1); background:rgba(255,48,96,.07); box-shadow:0 0 12px rgba(255,48,96,.18); }
 .bcard.ab2 { border-color:var(--p2); background:rgba(0,224,255,.07); box-shadow:0 0 12px rgba(0,224,255,.12); }
 .bcard.ab3 { border-color:var(--p3); background:rgba(170,255,0,.07); box-shadow:0 0 12px rgba(170,255,0,.12); }
+.bcard.abmine { border-color:#aa00ff; background:rgba(170,0,255,.07); box-shadow:0 0 12px rgba(170,0,255,.2); }
 .bcard-thresh { font-family:'Bebas Neue',sans-serif; font-size:20px; color:var(--muted); }
 .bcard.ready .bcard-thresh,.bcard.active-bonus .bcard-thresh { color:var(--text); }
 .bcard-name { font-size:8px; letter-spacing:2px; color:var(--muted); text-align:center; text-transform:uppercase; }
@@ -256,6 +263,7 @@ body {
 .bcard-dot.lit1 { border-color:var(--p1); background:var(--p1); box-shadow:0 0 6px var(--p1g); }
 .bcard-dot.lit2 { border-color:var(--p2); background:var(--p2); box-shadow:0 0 6px var(--p2g); }
 .bcard-dot.lit3 { border-color:var(--p3); background:var(--p3); box-shadow:0 0 6px var(--p3g); }
+.bcard-dot.litmine { border-color:#aa00ff; background:#aa00ff; box-shadow:0 0 8px rgba(170,0,255,.7); }
 .bcard-dot.used-dot { border-color:#333; background:#1a1a1a; opacity:.3; }
 .bbtn {
   font-family:'Space Mono',monospace; font-size:9px; letter-spacing:1px;
@@ -265,9 +273,11 @@ body {
 .bbtn-1 { background:var(--p1); color:#fff; }
 .bbtn-2 { background:var(--p2); color:#000; }
 .bbtn-3 { background:var(--p3); color:#000; }
+.bbtn-mine { background:#aa00ff; color:#fff; }
 .bbtn:hover:not(:disabled) { transform:scale(1.08); }
 .bbtn:disabled { opacity:.3; cursor:default; transform:none!important; }
 .skip-note { font-size:8px; color:#ff9900; letter-spacing:1px; text-align:center; }
+.mine-desc { font-size:7px; color:#aa00ff; letter-spacing:1px; text-align:center; line-height:1.4; margin-top:2px; }
 
 .flash-banner {
   position:fixed; top:50%; left:50%; transform:translate(-50%,-50%);
@@ -302,7 +312,6 @@ body {
 }
 .restart-btn:hover { background:var(--text); color:var(--bg); }
 
-/* connection status */
 .conn-badge {
   position:fixed; bottom:12px; right:12px;
   font-size:8px; letter-spacing:2px; padding:4px 10px;
@@ -319,7 +328,6 @@ body {
 <div class="screen visible" id="screen-lobby">
   <div class="logo">SPLOKUS</div>
   <div class="subtitle" style="margin-bottom:32px">Da ti crkne krava!</div>
-
   <div class="lobby-section">
     <div class="lobby-label">Nombre de joueurs</div>
     <div class="setup-btns">
@@ -327,16 +335,12 @@ body {
       <button class="setup-btn" id="sb3" onclick="setPC(3)">3 J</button>
     </div>
   </div>
-
   <button class="primary-btn" onclick="createRoom()">CRÉER UNE PARTIE</button>
-
   <div class="or-divider">— ou rejoindre —</div>
-
   <div class="join-row">
     <input class="code-input" id="join-input" placeholder="CODE" maxlength="4" oninput="this.value=this.value.toUpperCase()">
     <button class="join-btn" onclick="joinRoom()">REJOINDRE</button>
   </div>
-
   <div id="lobby-err" style="font-size:9px;color:#ff3060;letter-spacing:2px;height:14px;text-align:center;"></div>
 </div>
 
@@ -344,20 +348,17 @@ body {
 <div class="screen" id="screen-waiting">
   <div class="logo">SPLOKUS</div>
   <div class="subtitle" style="margin-bottom:24px">En attente des joueurs</div>
-
   <div class="room-code-box">
     <div class="room-code-label">CODE DE LA PARTIE</div>
     <div class="room-code" id="display-code">----</div>
     <div class="share-url" id="share-url" onclick="copyLink()">Chargement...</div>
     <button class="copy-btn" id="copy-btn" onclick="copyLink()">📋 COPIER LE LIEN</button>
   </div>
-
   <div class="players-list" id="players-list"></div>
-
   <div class="waiting-msg" id="waiting-msg">En attente des autres joueurs...</div>
 </div>
 
-  <!-- ══ TRAP SCREEN ══ -->
+<!-- ══ TRAP SCREEN ══ -->
 <div class="screen" id="screen-trap">
   <div class="logo">SPLOKUS</div>
   <div class="pass-title" style="font-family:'Bebas Neue',sans-serif;font-size:48px;letter-spacing:6px;text-align:center;" id="trap-title">JOUEUR 1</div>
@@ -366,6 +367,7 @@ body {
   <div id="trap-grid"></div>
   <div style="font-size:9px;letter-spacing:3px;color:var(--muted);margin-top:12px;" id="trap-status">Clique une case pour la poser</div>
 </div>
+
 <!-- ══ GAME ══ -->
 <div class="screen" id="screen-game">
   <div class="game-header" id="game-header" data-p="1">
@@ -378,13 +380,10 @@ body {
       <div class="gh-score" id="gh-score">0</div>
     </div>
   </div>
-
   <div class="turn-indicator my-turn" id="turn-indicator">C'EST TON TOUR</div>
-
   <div class="all-scores" id="all-scores"></div>
   <div id="log">En attente...</div>
   <div id="grid"></div>
-
   <div class="bonus-wrap">
     <div class="bonus-title-row">Mes bonus</div>
     <div class="bonus-row" id="bonus-row"></div>
@@ -415,57 +414,46 @@ const supabaseClient = window.supabase.createClient(SUPA_URL, SUPA_KEY);
 const GRID=11, SPREAD=5;
 const PNAMES={1:'JOUEUR 1',2:'JOUEUR 2',3:'JOUEUR 3'};
 const PCOL={1:'var(--p1)',2:'var(--p2)',3:'var(--p3)'};
-const BTHR={skip:10,block:20,double:30};
+const BTHR={skip:10,block:20,mine:30};
 
 // ════════════════════════════════════════
 //  LOCAL STATE
 // ════════════════════════════════════════
 let numPlayers=2;
-let myPlayerNum=0;     // which player I am (1/2/3)
-let roomId='';         // 4-char code
+let myPlayerNum=0;
+let roomId='';
 let gameOver=false;
 let realtimeSub=null;
-let lastKnownState=null; // to avoid re-renders on own updates
+let lastKnownState=null;
 
 // ════════════════════════════════════════
 //  HELPERS
 // ════════════════════════════════════════
 const idx=(r,c)=>r*GRID+c;
 const dead=(r,c)=>r===0||r===GRID-1||c===0||c===GRID-1;
-function adjCells(r,c,ex){
-  const D=[[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]],out=[];
-  for(const[dr,dc]of D){
-    const nr=r+dr,nc=c+dc;
-    if(nr<0||nr>=GRID||nc<0||nc>=GRID||dead(nr,nc)) continue;
-    if(ex&&ex.has(`${nr},${nc}`)) continue;
-    out.push([nr,nc]);
-  }
-  return out;
-}
 function rnd(arr,n){return[...arr].sort(()=>Math.random()-.5).slice(0,n);}
-function freeCells(cells, ex){
+function freeCells(cells,ex){
   const s=new Set((ex||[]).map(([r,c])=>`${r},${c}`)),out=[];
   for(let r=1;r<GRID-1;r++)for(let c=1;c<GRID-1;c++)
     if(!s.has(`${r},${c}`)&&!cells[idx(r,c)].blocked) out.push([r,c]);
   return out;
 }
-function organicSpread(cells, r, c, spread, trapCells=[]){
+function organicSpread(cells,r,c,spread,trapCells=[]){
   const trapSet=new Set(trapCells.map(([tr,tc])=>`${tr},${tc}`));
   const captured=[[r,c]];
   const used=new Set([`${r},${c}`]);
-  let slots=spread-1;
-  let attempts=0;
-  while(slots>0 && attempts<100){
+  let slots=spread-1, attempts=0;
+  while(slots>0&&attempts<100){
     attempts++;
     const[sr,sc]=captured[Math.floor(Math.random()*captured.length)];
     const D=[[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]];
     const shuffled=[...D].sort(()=>Math.random()-.5);
     for(const[dr,dc]of shuffled){
-      const nr=sr+dr, nc=sc+dc;
+      const nr=sr+dr,nc=sc+dc;
       if(nr<0||nr>=GRID||nc<0||nc>=GRID) continue;
       if(used.has(`${nr},${nc}`)) continue;
       used.add(`${nr},${nc}`);
-      if(dead(nr,nc)){ slots--; break; }
+      if(dead(nr,nc)){slots--;break;}
       if(cells[idx(nr,nc)].blocked) continue;
       if(trapSet.has(`${nr},${nc}`)) continue;
       captured.push([nr,nc]);
@@ -489,22 +477,17 @@ function makeInitialState(nPlayers){
     bonuses:{
       skip:{u:false,used:false,act:false},
       block:{u:false,used:false,act:false},
-      double:{u:false,used:false,act:false}
+      mine:{u:false,used:false,act:false}
     }
   };
   return {
-    cells,
-    players,
-    numPlayers:nPlayers,
+    cells,players,numPlayers:nPlayers,
     turnOrder:Array.from({length:nPlayers},(_,i)=>i+1),
-    turnIdx:0,
-    lastCell:null,
-    lastBy:0,
-    lastLit:[],
-    skipQueue:{},
-    gameOver:false,
-    connectedPlayers:{},
-    traps: {}, // { playerNum: {r, c} }
+    turnIdx:0,lastCell:null,lastBy:0,lastLit:[],
+    skipQueue:{},gameOver:false,connectedPlayers:{},
+    traps:{},
+    // minedCells: { playerNum: { cells:[[r,c],...], originCell:{r,c}, placedAtTurn:N } }
+    minedCells:{}
   };
 }
 
@@ -517,8 +500,8 @@ function showScreen(id){
   window.scrollTo(0,0);
 }
 function goLobby(){
-  if(realtimeSub){ supabaseClient.removeChannel(realtimeSub); realtimeSub=null; }
-  roomId=''; myPlayerNum=0; gameOver=false; lastKnownState=null;
+  if(realtimeSub){supabaseClient.removeChannel(realtimeSub);realtimeSub=null;}
+  roomId='';myPlayerNum=0;gameOver=false;lastKnownState=null;
   showScreen('screen-lobby');
 }
 
@@ -534,89 +517,61 @@ function setLobbyErr(msg){
   document.getElementById('lobby-err').textContent=msg;
   setTimeout(()=>{document.getElementById('lobby-err').textContent='';},3000);
 }
-
 async function createRoom(){
   setBadge('CONNEXION...','');
   const code=generateCode();
   const state=makeInitialState(numPlayers);
-  // Mark player 1 as connected
   state.connectedPlayers[1]=true;
-
-  const{error}=await supabaseClient.from('rooms').insert({
-    id:code,
-    state,
-    current_player:1,
-    num_players:numPlayers,
-    status:'waiting'
-  });
-  if(error){ setLobbyErr('Erreur réseau – réessaie'); console.error(error); return; }
-
-  // Also insert player record
+  const{error}=await supabaseClient.from('rooms').insert({id:code,state,current_player:1,num_players:numPlayers,status:'waiting'});
+  if(error){setLobbyErr('Erreur réseau – réessaie');console.error(error);return;}
   await supabaseClient.from('room_players').insert({room_id:code,player_num:1});
-
-  roomId=code;
-  myPlayerNum=1;
+  roomId=code;myPlayerNum=1;
   setBadge('CONNECTÉ','ok');
-  showWaitingRoom(code, state, numPlayers);
+  showWaitingRoom(code,state,numPlayers);
   subscribeRoom(code);
 }
-
 async function joinRoom(){
   const code=document.getElementById('join-input').value.trim().toUpperCase();
-  if(code.length!==4){ setLobbyErr('Code à 4 lettres'); return; }
-
+  if(code.length!==4){setLobbyErr('Code à 4 lettres');return;}
   setBadge('CONNEXION...','');
   const{data,error}=await supabaseClient.from('rooms').select('*').eq('id',code).single();
-  if(error||!data){ setLobbyErr('Partie introuvable'); return; }
- const hasAllTraps=data.state.traps&&Object.keys(data.state.traps).length>=data.num_players;
-if(data.status==='playing'&&hasAllTraps){ setLobbyErr('Partie déjà en cours'); return; }
-  if(data.status==='ended'){ setLobbyErr('Partie terminée'); return; }
-
-  // Find next available player slot
+  if(error||!data){setLobbyErr('Partie introuvable');return;}
+  const hasAllTraps=data.state.traps&&Object.keys(data.state.traps).length>=data.num_players;
+  if(data.status==='playing'&&hasAllTraps){setLobbyErr('Partie déjà en cours');return;}
+  if(data.status==='ended'){setLobbyErr('Partie terminée');return;}
   const{data:existingPlayers}=await supabaseClient.from('room_players').select('*').eq('room_id',code);
   const takenNums=new Set((existingPlayers||[]).map(p=>p.player_num));
   let myNum=0;
-  for(let i=1;i<=data.num_players;i++){ if(!takenNums.has(i)){myNum=i;break;} }
-  if(myNum===0){ setLobbyErr('Partie complète'); return; }
-
-  // Insert player
+  for(let i=1;i<=data.num_players;i++){if(!takenNums.has(i)){myNum=i;break;}}
+  if(myNum===0){setLobbyErr('Partie complète');return;}
   await supabaseClient.from('room_players').insert({room_id:code,player_num:myNum});
-
-  // Update state to mark this player connected
   const state=data.state;
   if(!state.connectedPlayers) state.connectedPlayers={};
   state.connectedPlayers[myNum]=true;
-
-  // If all players joined, start the game
   const allJoined=takenNums.size+1>=data.num_players;
   if(allJoined){
     await supabaseClient.from('rooms').update({state,status:'playing'}).eq('id',code);
   } else {
     await supabaseClient.from('rooms').update({state}).eq('id',code);
   }
-
-  roomId=code;
-  myPlayerNum=myNum;
-  numPlayers=data.num_players;
+  roomId=code;myPlayerNum=myNum;numPlayers=data.num_players;
   setBadge('CONNECTÉ','ok');
-  showWaitingRoom(code, state, data.num_players);
-subscribeRoom(code);
-if(allJoined){
-  setTimeout(()=>startTrapSetup(state), 300);
-}
+  showWaitingRoom(code,state,data.num_players);
+  subscribeRoom(code);
+  if(allJoined) setTimeout(()=>startTrapSetup(state),300);
 }
 
 // ════════════════════════════════════════
-//  WAITING ROOM UI
+//  WAITING ROOM
 // ════════════════════════════════════════
-function showWaitingRoom(code, state, nPlayers){
+function showWaitingRoom(code,state,nPlayers){
   document.getElementById('display-code').textContent=code;
   const url=`${location.origin}${location.pathname}?room=${code}`;
   document.getElementById('share-url').textContent=url;
-  updatePlayersList(state, nPlayers);
+  updatePlayersList(state,nPlayers);
   showScreen('screen-waiting');
 }
-function updatePlayersList(state, nPlayers){
+function updatePlayersList(state,nPlayers){
   const list=document.getElementById('players-list');
   list.innerHTML='';
   const connected=state.connectedPlayers||{};
@@ -624,40 +579,31 @@ function updatePlayersList(state, nPlayers){
     const div=document.createElement('div');
     const filled=connected[p];
     div.className=`player-slot ps${p}${filled?' filled':''}`;
-    div.innerHTML=`
-      <div class="slot-dot"></div>
-      <div class="slot-name">${filled?PNAMES[p]:'En attente...'}</div>
-      ${p===myPlayerNum?'<div class="slot-you">← C\'EST TOI</div>':''}
-    `;
+    div.innerHTML=`<div class="slot-dot"></div><div class="slot-name">${filled?PNAMES[p]:'En attente...'}</div>${p===myPlayerNum?'<div class="slot-you">← C\'EST TOI</div>':''}`;
     list.appendChild(div);
   }
   const connCount=Object.keys(connected).length;
   const msg=document.getElementById('waiting-msg');
-  if(connCount>=nPlayers){
-    msg.textContent='Tous les joueurs sont là ! Lancement...';
-    msg.style.color='var(--p3)';
-  } else {
-    msg.textContent=`${connCount}/${nPlayers} joueurs connectés...`;
-    msg.style.color='';
-  }
+  if(connCount>=nPlayers){msg.textContent='Tous les joueurs sont là ! Lancement...';msg.style.color='var(--p3)';}
+  else{msg.textContent=`${connCount}/${nPlayers} joueurs connectés...`;msg.style.color='';}
 }
 function copyLink(){
   const url=`${location.origin}${location.pathname}?room=${roomId}`;
   navigator.clipboard.writeText(url).then(()=>{
     const btn=document.getElementById('copy-btn');
-    btn.textContent='✅ COPIÉ !'; btn.classList.add('copied');
-    setTimeout(()=>{ btn.textContent='📋 COPIER LE LIEN'; btn.classList.remove('copied'); },2000);
+    btn.textContent='✅ COPIÉ !';btn.classList.add('copied');
+    setTimeout(()=>{btn.textContent='📋 COPIER LE LIEN';btn.classList.remove('copied');},2000);
   });
 }
 
 // ════════════════════════════════════════
-//  REALTIME SUBSCRIPTION
+//  REALTIME
 // ════════════════════════════════════════
 function subscribeRoom(code){
   if(realtimeSub) supabaseClient.removeChannel(realtimeSub);
   realtimeSub=supabaseClient.channel(`room-${code}`)
     .on('postgres_changes',{event:'UPDATE',schema:'public',table:'rooms',filter:`id=eq.${code}`},
-      (payload)=>{ onRoomUpdate(payload.new); })
+      (payload)=>{onRoomUpdate(payload.new);})
     .subscribe((status)=>{
       if(status==='SUBSCRIBED') setBadge('EN DIRECT','ok');
       else if(status==='CHANNEL_ERROR'||status==='TIMED_OUT') setBadge('HORS LIGNE','err');
@@ -667,153 +613,142 @@ function onRoomUpdate(row){
   const state=row.state;
   if(!state) return;
   lastKnownState=state;
-
-  if(row.status==='waiting'){
-    updatePlayersList(state, row.num_players);
-    return;
-  }
-
-  if(row.status==='playing' || row.status==='ended'){
+  if(row.status==='waiting'){updatePlayersList(state,row.num_players);return;}
+  if(row.status==='playing'||row.status==='ended'){
     numPlayers=row.num_players||numPlayers;
     const hasAllTraps=state.traps&&Object.keys(state.traps).length>=numPlayers;
-
     if(hasAllTraps){
       if(!document.getElementById('screen-game').classList.contains('visible')&&
          !document.getElementById('screen-end').classList.contains('visible')){
         startGameScreen(state);
-      } else {
-        renderGameState(state);
-      }
+      } else {renderGameState(state);}
     } else {
-      const currentlyWaiting=document.getElementById('screen-waiting').classList.contains('visible');
-      if(currentlyWaiting){
+      if(document.getElementById('screen-waiting').classList.contains('visible')){
         startTrapSetup(state);
       }
     }
-    return;
   }
 }
-// ════════════════════════════════════════
-//  START GAME
-// ════════════════════════════════════════
-function startGameScreen(state){
-  buildGrid();
-  renderGameState(state);
-  showScreen('screen-game');
-}
-// ══ TRAP SETUP ══
-let trapConfirmed=false;
 
+// ════════════════════════════════════════
+//  TRAP SETUP
+// ════════════════════════════════════════
+let trapConfirmed=false;
 function buildTrapGrid(p){
-  const g=document.getElementById('trap-grid'); g.innerHTML='';
+  const g=document.getElementById('trap-grid');g.innerHTML='';
   for(let r=0;r<GRID;r++)for(let c=0;c<GRID;c++){
     const d=document.createElement('div');
     d.className='cell';
-    if(dead(r,c)){
-      d.classList.add('dead');
-    } else {
-      d.classList.add('empty');
-      d.style.cursor='crosshair';
-      d.addEventListener('click',()=>onTrapCell(r,c,p));
-    }
+    if(dead(r,c)){d.classList.add('dead');}
+    else{d.classList.add('empty');d.style.cursor='crosshair';d.addEventListener('click',()=>onTrapCell(r,c,p));}
     g.appendChild(d);
   }
 }
-
-
 function startTrapSetup(state){
   trapConfirmed=false;
   const p=myPlayerNum;
   const title=document.getElementById('trap-title');
-  title.textContent=PNAMES[p];
-  title.style.color=`var(--p${p})`;
+  title.textContent=PNAMES[p];title.style.color=`var(--p${p})`;
   buildTrapGrid(p);
   document.getElementById('trap-status').textContent='Clique une case pour poser ton piège';
   showScreen('screen-trap');
 }
-  
 function onTrapCell(r,c,p){
   if(trapConfirmed) return;
   const g=document.getElementById('trap-grid');
-  g.querySelectorAll('.cell').forEach(el=>{ el.style.outline=''; el.style.outlineOffset=''; });
+  g.querySelectorAll('.cell').forEach(el=>{el.style.outline='';el.style.outlineOffset='';});
   const cellEl=g.children[r*GRID+c];
-  cellEl.style.outline=`3px solid var(--p${p})`;
-  cellEl.style.outlineOffset='-3px';
+  cellEl.style.outline=`3px solid var(--p${p})`;cellEl.style.outlineOffset='-3px';
   document.getElementById('trap-status').textContent='Case sélectionnée — reclique pour confirmer !';
-  cellEl.addEventListener('click', async ()=>{
+  cellEl.addEventListener('click',async()=>{
     if(trapConfirmed) return;
     trapConfirmed=true;
     document.getElementById('trap-status').textContent='✅ Piège posé ! En attente des autres joueurs...';
-    g.querySelectorAll('.cell').forEach(el=>{ el.style.pointerEvents='none'; });
+    g.querySelectorAll('.cell').forEach(el=>{el.style.pointerEvents='none';});
     const{data}=await supabaseClient.from('rooms').select('state').eq('id',roomId).single();
     if(!data) return;
     const state=data.state;
     if(!state.traps) state.traps={};
     state.traps[p]={r,c};
     await supabaseClient.from('rooms').update({state}).eq('id',roomId);
-    if(Object.keys(state.traps).length>=state.numPlayers){
-      startGameScreen(state);
-    }
+    if(Object.keys(state.traps).length>=state.numPlayers) startGameScreen(state);
   },{once:true});
 }
 
 // ════════════════════════════════════════
-//  GRID BUILD
+//  START GAME
 // ════════════════════════════════════════
+function startGameScreen(state){buildGrid();renderGameState(state);showScreen('screen-game');}
 function buildGrid(){
-  const g=document.getElementById('grid'); g.innerHTML='';
+  const g=document.getElementById('grid');g.innerHTML='';
   for(let r=0;r<GRID;r++)for(let c=0;c<GRID;c++){
     const d=document.createElement('div');
-    d.className='cell'; d.id=`c${r}_${c}`;
+    d.className='cell';d.id=`c${r}_${c}`;
     d.addEventListener('click',()=>onCell(r,c));
     g.appendChild(d);
   }
 }
 
 // ════════════════════════════════════════
-//  RENDER STATE
+//  RENDER
 // ════════════════════════════════════════
 function renderGameState(state){
   if(!state) return;
   const cells=state.cells;
   const currentP=state.turnOrder[state.turnIdx%state.turnOrder.length];
   const isMyTurn=currentP===myPlayerNum;
-if(state.lastTrapMsg && state.lastTrapMsg!==window._trapMsgShown){
-  window._trapMsgShown=state.lastTrapMsg;
-  banner(state.lastTrapMsg, 'var(--text)', '#ff9900');
-  // Remettre à null après affichage
-  setTimeout(async()=>{
-    const{data}=await supabaseClient.from('rooms').select('state').eq('id',roomId).single();
-    if(!data) return;
-    const s=data.state;
-    s.lastTrapMsg=null;
-    await supabaseClient.from('rooms').update({state:s}).eq('id',roomId);
-  }, 500);
-}
+
+  // Trap message
+  if(state.lastTrapMsg&&state.lastTrapMsg!==window._trapMsgShown){
+    window._trapMsgShown=state.lastTrapMsg;
+    banner(state.lastTrapMsg,'var(--text)','#ff9900');
+    setTimeout(async()=>{
+      const{data}=await supabaseClient.from('rooms').select('state').eq('id',roomId).single();
+      if(!data) return;const s=data.state;s.lastTrapMsg=null;
+      await supabaseClient.from('rooms').update({state:s}).eq('id',roomId);
+    },500);
+  }
+
+  // Mine message
+  if(state.lastMineMsg&&state.lastMineMsg!==window._mineMsgShown){
+    window._mineMsgShown=state.lastMineMsg;
+    banner(state.lastMineMsg,'var(--text)','#aa00ff');
+    setTimeout(async()=>{
+      const{data}=await supabaseClient.from('rooms').select('state').eq('id',roomId).single();
+      if(!data) return;const s=data.state;s.lastMineMsg=null;
+      await supabaseClient.from('rooms').update({state:s}).eq('id',roomId);
+    },500);
+  }
+
   // Header
-  const header=document.getElementById('game-header');
-  header.dataset.p=myPlayerNum;
+  document.getElementById('game-header').dataset.p=myPlayerNum;
   document.getElementById('gh-name').textContent=PNAMES[myPlayerNum];
   document.getElementById('gh-score').textContent=(state.players[myPlayerNum]||{}).score||0;
   document.getElementById('gh-badge').textContent=isMyTurn?'MON TOUR':'En attente';
 
   // Turn indicator
   const ti=document.getElementById('turn-indicator');
-  if(isMyTurn){
-    ti.className='turn-indicator my-turn';
-    ti.textContent='C\'EST TON TOUR — JOUE !';
-  } else {
-    ti.className='turn-indicator their-turn';
-    ti.textContent=`Tour de ${PNAMES[currentP]}...`;
-  }
+  if(isMyTurn){ti.className='turn-indicator my-turn';ti.textContent='C\'EST TON TOUR — JOUE !';}
+  else{ti.className='turn-indicator their-turn';ti.textContent=`Tour de ${PNAMES[currentP]}...`;}
 
   // Mini scores
-  const as=document.getElementById('all-scores'); as.innerHTML='';
+  const as=document.getElementById('all-scores');as.innerHTML='';
   for(let p=1;p<=state.numPlayers;p++){
     const d=document.createElement('div');
     d.className=`mini-score ms${p}`;
     d.textContent=`${PNAMES[p].replace('JOUEUR ','J')}: ${(state.players[p]||{}).score||0}`;
     as.appendChild(d);
+  }
+
+  // Build mined sets — only show OWN mines visually
+  const myMinedSet=new Set();
+  const myMineOrigin=state.minedCells&&state.minedCells[myPlayerNum]
+    ? `${state.minedCells[myPlayerNum].originCell.r},${state.minedCells[myPlayerNum].originCell.c}`
+    : null;
+  if(state.minedCells&&state.minedCells[myPlayerNum]){
+    for(const[mr,mc] of (state.minedCells[myPlayerNum].cells||[])){
+      myMinedSet.add(`${mr},${mc}`);
+    }
   }
 
   // Grid cells
@@ -822,60 +757,56 @@ if(state.lastTrapMsg && state.lastTrapMsg!==window._trapMsgShown){
     const d=document.getElementById(`c${r}_${c}`);
     if(!d) continue;
     d.className='cell';
+    const key=`${r},${c}`;
+
     if(dead(r,c)){
       d.classList.add('dead');
     } else if(cell.blocked){
       d.classList.add('blocked');
       if(cell.hits>=4) d.classList.add('locked-final');
-    } else if(cell.owner>0){
-      d.classList.add(`p${cell.owner}c`);
-      if(isMyTurn) d.classList.add('clickable');
     } else {
-      d.classList.add('empty');
-      if(isMyTurn) d.classList.add('clickable');
-      else d.classList.add('not-my-turn');
+      if(cell.owner>0){
+        d.classList.add(`p${cell.owner}c`);
+        if(isMyTurn) d.classList.add('clickable');
+      } else {
+        d.classList.add('empty');
+        if(isMyTurn) d.classList.add('clickable');
+        else d.classList.add('not-my-turn');
+      }
+      // Overlay my own mines so I can see them
+      if(myMinedSet.has(key)){
+        d.classList.add('mined-own');
+        if(myMineOrigin===key) d.classList.add('mine-origin');
+      }
+      if(state.lastCell&&state.lastCell.r===r&&state.lastCell.c===c&&state.lastBy===myPlayerNum)
+        d.classList.add('last-played');
     }
-    if(state.lastCell&&state.lastCell.r===r&&state.lastCell.c===c&&state.lastBy===myPlayerNum) d.classList.add('last-played');
   }
 
-  // Bonus cards
-  renderBonusCards(state, myPlayerNum, isMyTurn);
+  renderBonusCards(state,myPlayerNum,isMyTurn);
+  if(!isMyTurn) setLog(`${PNAMES[currentP]} est en train de jouer...`);
 
-  // Log
-  if(!isMyTurn){
-  setLog(`${PNAMES[currentP]} est en train de jouer...`);
-} 
-
-if(state.lastSkippedPlayer && state.lastSkippedPlayer!==window._skipBannerShown){
-  window._skipBannerShown=state.lastSkippedPlayer;
-  if(state.lastSkippedPlayer===myPlayerNum){
-    banner('TON TOUR A ÉTÉ ZAPPÉ ! ⚡','var(--p1)','var(--p1)');
-  } else {
-    banner(`${PNAMES[state.lastSkippedPlayer]}\nA ÉTÉ ZAPPÉ ! ⚡`,'var(--text)','var(--p2)');
+  // Skip banner
+  if(state.lastSkippedPlayer&&state.lastSkippedPlayer!==window._skipBannerShown){
+    window._skipBannerShown=state.lastSkippedPlayer;
+    if(state.lastSkippedPlayer===myPlayerNum) banner('TON TOUR A ÉTÉ ZAPPÉ ! ⚡','var(--p1)','var(--p1)');
+    else banner(`${PNAMES[state.lastSkippedPlayer]}\nA ÉTÉ ZAPPÉ ! ⚡`,'var(--text)','var(--p2)');
   }
-}
-if(!state.lastSkippedPlayer){
-  window._skipBannerShown=null;
-}
+  if(!state.lastSkippedPlayer) window._skipBannerShown=null;
 
-  // Game over
-  if(state.gameOver){ endGame(state); }
+  if(state.gameOver) endGame(state);
 }
 
 // ════════════════════════════════════════
 //  CELL CLICK
 // ════════════════════════════════════════
 async function onCell(r,c){
-  if(gameOver) return;
-  if(!roomId) return;
-  if(dead(r,c)) return;
-
+  if(gameOver||!roomId||dead(r,c)) return;
   const{data,error}=await supabaseClient.from('rooms').select('state,status').eq('id',roomId).single();
   if(error||!data) return;
   const state=data.state;
-state.lastTrapMsg=null;
-state.lastSkippedPlayer=null;
-window._trapMsgShown=null;
+  state.lastTrapMsg=null;state.lastMineMsg=null;state.lastSkippedPlayer=null;
+  window._trapMsgShown=null;window._mineMsgShown=null;
 
   const currentP=state.turnOrder[state.turnIdx%state.turnOrder.length];
   if(currentP!==myPlayerNum) return;
@@ -887,273 +818,340 @@ window._trapMsgShown=null;
 
   const p=myPlayerNum;
   const pl=state.players[p];
-  const cellHits=cell.hits;
 
   const recent=state.recentMoves||[];
   const alreadyPlayed=recent.length>=state.numPlayers&&recent.every(m=>m.r===r&&m.c===c);
-  if(alreadyPlayed){
-    setLog('⛔ Cette case a déjà été jouée ce tour !');
+  if(alreadyPlayed){setLog('⛔ Cette case a déjà été jouée ce tour !');return;}
+
+  // ─────────────────────────────────────
+  //  CHECK: Did I step on an opponent's mine?
+  // ─────────────────────────────────────
+  const minedCells=state.minedCells||{};
+  let mineTriggered=false;
+  let mineMsg='';
+  let triggeredMineOwner=null;
+
+  for(const[ownerStr,mineData] of Object.entries(minedCells)){
+    const owner=parseInt(ownerStr);
+    if(owner===p) continue; // Can't trigger own mines
+    const mineCellList=mineData.cells||[];
+    const originCell=mineData.originCell;
+
+    const isInMinedArea=mineCellList.some(([mr,mc])=>Number(mr)===r&&Number(mc)===c);
+    if(!isInMinedArea) continue;
+
+    mineTriggered=true;
+    triggeredMineOwner=owner;
+
+    // Check exact origin cell → escape: no penalty, no capture, but turn still passes
+    const isExactOrigin=originCell&&Number(originCell.r)===r&&Number(originCell.c)===c;
+    if(isExactOrigin){
+      mineMsg=`🧠 ${PNAMES[p]} A ESQUIVÉ !\nCase exacte — pas de malus, mais pas de cases`;
+    } else {
+      // Hit a mined cell → -5 pts, no capture
+      for(let pp=1;pp<=state.numPlayers;pp++)
+        state.players[pp].score=cells.filter(c2=>c2.owner===pp).length;
+      state.players[p].score=Math.max(0,state.players[p].score-5);
+      mineMsg=`💥 ${PNAMES[p]} A EXPLOSÉ SUR UNE MINE\nDE ${PNAMES[owner]} !\n-5 pts — aucune case colorée`;
+    }
+    break;
+  }
+
+  if(mineTriggered){
+    // Remove the triggered mine field (it's spent after one opponent interaction)
+    const newMined={};
+    for(const[ownerStr,mineData] of Object.entries(minedCells)){
+      const owner=parseInt(ownerStr);
+      if(owner===triggeredMineOwner) continue; // this mine is consumed
+      newMined[ownerStr]=mineData;
+    }
+    state.minedCells=newMined;
+    state.lastMineMsg=mineMsg;
+    state.cells=cellsBackup; // no cell changes
+    // Advance turn
+    state.turnIdx++;
+    let guard=0;
+    while(guard<state.numPlayers){
+      const nextP=state.turnOrder[state.turnIdx%state.turnOrder.length];
+      if(state.skipQueue&&state.skipQueue[nextP]){
+        delete state.skipQueue[nextP];state.turnIdx++;guard++;
+      } else break;
+    }
+    state.lastSkippedPlayer=null;
+    const ns=state.gameOver?'ended':'playing';
+    await supabaseClient.from('rooms')
+      .update({state,current_player:state.turnOrder[state.turnIdx%state.turnOrder.length],status:ns})
+      .eq('id',roomId);
+    lastKnownState=state;
+    window._mineMsgShown=null;
+    banner(mineMsg,'var(--text)','#aa00ff');
+    renderGameState(state);
     return;
   }
 
-const stealThreshold = state.numPlayers;
-const isSteal=
-  state.lastCell&&state.lastCell.r===r&&state.lastCell.c===c&&
-  state.lastBy&&state.lastBy!==p&&cellHits<stealThreshold;
+  // ─────────────────────────────────────
+  //  Normal move
+  // ─────────────────────────────────────
+   // Consume mine bonus flag
+  const doMine=pl.bonuses.mine.act;
+  if(doMine){pl.bonuses.mine.act=false;pl.bonuses.mine.used=true;}
+  const doBlock=pl.bonuses.block.act;
+  if(doBlock){pl.bonuses.block.act=false;pl.bonuses.block.used=true;}
 
-  let spread=SPREAD;
-  if(pl.bonuses.double.act){ spread=10; pl.bonuses.double.act=false; pl.bonuses.double.used=true; }
+  // ─────────────────────────────────────
+  //  Détection du steal + capture unifiée (5 précédentes + 2 random)
+  // ─────────────────────────────────────
+  let captured = [];
 
-  let captured=[];
-  if(isSteal){
-    const extras=rnd(freeCells(cells, state.lastLit),2);
-    captured=[...state.lastLit,...extras].filter(([tr,tc])=>!dead(tr,tc)&&!cells[idx(tr,tc)].blocked);
+  const isSteal = 
+    state.lastCell && 
+    state.lastCell.r === r && 
+    state.lastCell.c === c && 
+    state.lastBy && 
+    state.lastBy !== p;
+
+  if (isSteal) {
+    // Toujours : les 5 cases du coup précédent + 2 random
+    const previousLit = state.lastLit || [];
+    const extras = rnd(freeCells(cells, previousLit), 2);
+    
+    captured = [...previousLit, ...extras].filter(([tr, tc]) => 
+      !dead(tr, tc) && !cells[idx(tr, tc)].blocked
+    );
+
     setLog(`⚡ Vol de territoire + 2 bonus !`);
-  } else {
-    const trapCells=Object.entries(state.traps||{})
-  .filter(([owner])=>parseInt(owner)!==p)
-  .map(([,t])=>[Number(t.r),Number(t.c)]);
-captured=organicSpread(cells, r, c, spread, trapCells);;
+  } 
+  else {
+    // Coup normal
+    const trapCells = Object.entries(state.traps || {})
+      .filter(([owner]) => parseInt(owner) !== p)
+      .map(([, t]) => [Number(t.r), Number(t.c)]);
+
+    captured = organicSpread(cells, r, c, SPREAD, trapCells);
     setLog(`+${captured.length} cases capturées`);
   }
 
   // Deduplicate
-  const unique=new Set();
-  captured=captured.filter(([r,c])=>{
-    const key=`${r},${c}`;
-    if(unique.has(key)) return false;
-    unique.add(key); return true;
+  const unique = new Set();
+  captured = captured.filter(([r, c]) => {
+    const key = `${r},${c}`;
+    if (unique.has(key)) return false;
+    unique.add(key);
+    return true;
   });
 
-  const doBlock=pl.bonuses.block.act;
-  if(doBlock){ pl.bonuses.block.act=false; pl.bonuses.block.used=true; }
-console.log('captured:', captured.map(([r,c])=>`${r},${c}`));
-console.log('traps:', state.traps);
-  console.log('captured:', captured.map(([r,c])=>`${r},${c}`));
-console.log('traps:', state.traps);
-console.log('trap details:', JSON.stringify(state.traps));
-  console.log('trap p1:', state.traps[1], 'trap p2:', state.traps[2]);
-// Vérifier les pièges AVANT d'appliquer
-const traps=state.traps||{};
-let trapTriggered=false;
-let trapMsg='';
-for(const[ownerStr, trap] of Object.entries(traps)){
-  const owner=parseInt(ownerStr);
- const triggered=Number(r)===Number(trap.r)&&Number(c)===Number(trap.c);
-  if(!triggered) continue;
-  trapTriggered=true;
-  if(owner===p){
-    state.players[p].score=Math.max(0, state.players[p].score-7);
-    trapMsg=`💀 ${PNAMES[p]} A TOUCHÉ SON PROPRE PIÈGE !\n-7 pts`;
-  } else {
-    state.players[owner].score+=5;
-    trapMsg=`⚡ ${PNAMES[p]} A DÉCLENCHÉ LE PIÈGE\nDE ${PNAMES[owner]} !\n+5 pts pour ${PNAMES[owner]}`;
+  // ─────────────────────────────────────
+  //  TRAP CHECK (on click cell)
+  // ──────────────────────────
+  const traps=state.traps||{};
+  let trapTriggered=false,trapMsg='';
+  for(const[ownerStr,trap] of Object.entries(traps)){
+    const owner=parseInt(ownerStr);
+    if(Number(r)!==Number(trap.r)||Number(c)!==Number(trap.c)) continue;
+    trapTriggered=true;
+    if(owner===p){
+      state.players[p].score=Math.max(0,state.players[p].score-7);
+      trapMsg=`💀 ${PNAMES[p]} A TOUCHÉ SON PROPRE PIÈGE !\n-7 pts`;
+    } else {
+      state.players[owner].score+=5;
+      trapMsg=`⚡ ${PNAMES[p]} A DÉCLENCHÉ LE PIÈGE\nDE ${PNAMES[owner]} !\n+5 pts pour ${PNAMES[owner]}`;
+    }
   }
-}
-
-if(trapTriggered){
-  state.lastTrapMsg=trapMsg;
-  state.cells=cellsBackup;
-  state.turnIdx++;
-  let trapGuard=0;
-  while(trapGuard<state.numPlayers){
-    const nextP=state.turnOrder[state.turnIdx%state.turnOrder.length];
-    if(state.skipQueue[nextP]){
-      delete state.skipQueue[nextP];
-      state.turnIdx++;
-      trapGuard++;
-    } else { break; }
-  }
-  state.lastSkippedPlayer=null;
-  await supabaseClient.from('rooms')
-    .update({state, current_player:state.turnOrder[state.turnIdx%state.turnOrder.length], status:state.gameOver?'ended':'playing'})
-    .eq('id',roomId);
-  lastKnownState=state;
-  window._trapMsgShown=null;
-  banner(trapMsg,'var(--text)','#ff9900');
-  renderGameState(state);
-  return;
-}
-
-const lit=[];
-for(const[tr,tc]of captured){
-  if(dead(tr,tc)) continue;
-  const tc2=cells[idx(tr,tc)];
-  if(tc2.blocked){ lit.push([tr,tc]); continue; }
-  const wasE=tc2.owner===0;
-  if(wasE){
-    tc2.hits=1;
-  } else {
-    tc2.hits++;
-  }
-  tc2.owner=p;
-  if(tc2.hits>=4) tc2.blocked=true;
-  if(wasE) pl.empty++;
-  lit.push([tr,tc]);
-}
-
-state.lastLit=lit;
-state.lastCell={r,c};
-state.lastBy=p;
-
-if(!state.recentMoves) state.recentMoves=[];
-if(state.recentMoves.length>0){
-  const last=state.recentMoves[state.recentMoves.length-1];
-  if(last.r!==r||last.c!==c) state.recentMoves=[];
-}
-state.recentMoves.push({r,c,p});
-
-if(doBlock){
-  for(const[tr,tc]of lit){
-    const tc2=cells[idx(tr,tc)];
-    if(!tc2.blocked){ tc2.blocked=true; }
-  }
-}
-
-for(let pp=1;pp<=state.numPlayers;pp++){
-  state.players[pp].score=cells.filter(c2=>c2.owner===pp).length;
-}
-
-for(let pp=1;pp<=state.numPlayers;pp++){
-  const ppl=state.players[pp];
-  if(!ppl.bonuses.skip.u&&ppl.empty>=BTHR.skip) ppl.bonuses.skip.u=true;
-  if(!ppl.bonuses.block.u&&ppl.empty>=BTHR.block) ppl.bonuses.block.u=true;
-  if(!ppl.bonuses.double.u&&ppl.empty>=BTHR.double) ppl.bonuses.double.u=true;
-}
-
-state.turnIdx++;
-let guard=0;
-while(guard<state.numPlayers){
-  const nextP=state.turnOrder[state.turnIdx%state.turnOrder.length];
-  if(state.skipQueue[nextP]){
-    delete state.skipQueue[nextP];
+  if(trapTriggered){
+    state.lastTrapMsg=trapMsg;state.cells=cellsBackup;
     state.turnIdx++;
-    guard++;
-  } else { break; }
+    let tg=0;
+    while(tg<state.numPlayers){
+      const nextP=state.turnOrder[state.turnIdx%state.turnOrder.length];
+      if(state.skipQueue&&state.skipQueue[nextP]){delete state.skipQueue[nextP];state.turnIdx++;tg++;}
+      else break;
+    }
+    state.lastSkippedPlayer=null;
+    await supabaseClient.from('rooms')
+      .update({state,current_player:state.turnOrder[state.turnIdx%state.turnOrder.length],status:state.gameOver?'ended':'playing'})
+      .eq('id',roomId);
+    lastKnownState=state;window._trapMsgShown=null;
+    banner(trapMsg,'var(--text)','#ff9900');renderGameState(state);return;
+  }
+
+  // ─────────────────────────────────────
+  //  Apply captured cells
+  // ─────────────────────────────────────
+  const lit=[];
+  for(const[tr,tc]of captured){
+    if(dead(tr,tc)) continue;
+    const tc2=cells[idx(tr,tc)];
+    if(tc2.blocked){lit.push([tr,tc]);continue;}
+    const wasE=tc2.owner===0;
+    if(wasE){tc2.hits=1;}else{tc2.hits++;}
+    tc2.owner=p;
+    if(tc2.hits>=4) tc2.blocked=true;
+    if(wasE) pl.empty++;
+    lit.push([tr,tc]);
+  }
+  if(doBlock){
+    for(const[tr,tc]of lit){
+      const tc2=cells[idx(tr,tc)];
+      if(!tc2.blocked) tc2.blocked=true;
+    }
+  }
+
+  state.lastLit=lit;state.lastCell={r,c};state.lastBy=p;
+  if(!state.recentMoves) state.recentMoves=[];
+  if(state.recentMoves.length>0){
+    const last=state.recentMoves[state.recentMoves.length-1];
+    if(last.r!==r||last.c!==c) state.recentMoves=[];
+  }
+  state.recentMoves.push({r,c,p});
+
+  // ─────────────────────────────────────
+  //  MINE BONUS: mark captured cells as mined
+  // ─────────────────────────────────────
+  if(doMine){
+    if(!state.minedCells) state.minedCells={};
+    // The mined cells are exactly the lit cells from this move
+    // The "exact origin" escape cell is the cell the player actually clicked (r,c)
+    state.minedCells[p]={
+      cells: lit.filter(([tr,tc])=>!dead(tr,tc)).map(([tr,tc])=>[tr,tc]),
+      originCell:{r,c},
+      placedAtTurn:state.turnIdx
+    };
+    setLog(`💣 Zone minée ! ${lit.length} cases piégées pour le prochain tour adverse`);
+  }
+
+  // Expire old mines: remove mines whose placedAtTurn is too old (> numPlayers turns)
+  if(state.minedCells){
+    const newMined={};
+    for(const[ownerStr,mineData] of Object.entries(state.minedCells)){
+      if(mineData.placedAtTurn===undefined||state.turnIdx-mineData.placedAtTurn<=state.numPlayers){
+        newMined[ownerStr]=mineData;
+      }
+    }
+    state.minedCells=newMined;
+  }
+
+  // Score
+  for(let pp=1;pp<=state.numPlayers;pp++)
+    state.players[pp].score=cells.filter(c2=>c2.owner===pp).length;
+
+  // Bonus unlock
+  for(let pp=1;pp<=state.numPlayers;pp++){
+    const ppl=state.players[pp];
+    if(!ppl.bonuses.skip.u&&ppl.empty>=BTHR.skip) ppl.bonuses.skip.u=true;
+    if(!ppl.bonuses.block.u&&ppl.empty>=BTHR.block) ppl.bonuses.block.u=true;
+    if(!ppl.bonuses.mine.u&&ppl.empty>=BTHR.mine) ppl.bonuses.mine.u=true;
+  }
+
+  // Advance turn
+  state.turnIdx++;
+  let guard=0;
+  while(guard<state.numPlayers){
+    const nextP=state.turnOrder[state.turnIdx%state.turnOrder.length];
+    if(state.skipQueue&&state.skipQueue[nextP]){delete state.skipQueue[nextP];state.turnIdx++;guard++;}
+    else break;
+  }
+
+  // Check game over
+  let empty=0;
+  for(let rr=1;rr<GRID-1;rr++)for(let cc=1;cc<GRID-1;cc++) if(cells[idx(rr,cc)].owner===0) empty++;
+  if(empty===0) state.gameOver=true;
+
+  state.cells=cells;state.lastSkippedPlayer=null;
+  const newStatus=state.gameOver?'ended':'playing';
+  const{error:upErr}=await supabaseClient.from('rooms')
+    .update({state,current_player:state.turnOrder[state.turnIdx%state.turnOrder.length],status:newStatus})
+    .eq('id',roomId);
+  if(upErr){console.error('Update error',upErr);return;}
+  lastKnownState=state;
+  renderGameState(state);
+  flashLit(lit);
 }
 
-let empty=0;
-for(let rr=1;rr<GRID-1;rr++)for(let cc=1;cc<GRID-1;cc++) if(cells[idx(rr,cc)].owner===0) empty++;
-if(empty===0) state.gameOver=true;
-
-state.cells=cells;
-state.lastSkippedPlayer=null;
-const newStatus=state.gameOver?'ended':'playing';
-const{error:upErr}=await supabaseClient.from('rooms')
-  .update({state, current_player:state.turnOrder[state.turnIdx%state.turnOrder.length], status:newStatus})
-  .eq('id',roomId);
-
-if(upErr){ console.error('Update error',upErr); return; }
-
-lastKnownState=state;
-renderGameState(state);
-flashLit(lit);
-}
 function flashLit(lit){
   if(!lit) return;
   lit.forEach(([r,c])=>{
     const d=document.getElementById(`c${r}_${c}`);
     if(!d) return;
-    d.classList.remove('flash'); void d.offsetWidth; d.classList.add('flash');
+    d.classList.remove('flash');void d.offsetWidth;d.classList.add('flash');
   });
 }
 
 // ════════════════════════════════════════
-//  BONUS
+//  BONUS ACTIONS
 // ════════════════════════════════════════
 async function useBlock(){
   const{data}=await supabaseClient.from('rooms').select('state').eq('id',roomId).single();
-  if(!data) return;
-  const state=data.state;
-  const p=myPlayerNum;
+  if(!data) return;const state=data.state;const p=myPlayerNum;
   if(!state.players[p].bonuses.block.u||state.players[p].bonuses.block.used) return;
-  const currentP=state.turnOrder[state.turnIdx%state.turnOrder.length];
-  if(currentP!==p) return;
+  if(state.turnOrder[state.turnIdx%state.turnOrder.length]!==p) return;
   state.players[p].bonuses.block.act=true;
   await supabaseClient.from('rooms').update({state}).eq('id',roomId);
-  setLog('🔒 Blocage actif – ce coup verrouille les cases !');
-  renderGameState(state);
+  setLog('🔒 Blocage actif – ce coup verrouille les cases !');renderGameState(state);
 }
-async function useDouble(){
+async function useMine(){
   const{data}=await supabaseClient.from('rooms').select('state').eq('id',roomId).single();
-  if(!data) return;
-  const state=data.state;
-  const p=myPlayerNum;
-  if(!state.players[p].bonuses.double.u||state.players[p].bonuses.double.used) return;
-  const currentP=state.turnOrder[state.turnIdx%state.turnOrder.length];
-  if(currentP!==p) return;
-  state.players[p].bonuses.double.act=true;
+  if(!data) return;const state=data.state;const p=myPlayerNum;
+  if(!state.players[p].bonuses.mine.u||state.players[p].bonuses.mine.used) return;
+  if(state.turnOrder[state.turnIdx%state.turnOrder.length]!==p) return;
+  state.players[p].bonuses.mine.act=true;
   await supabaseClient.from('rooms').update({state}).eq('id',roomId);
-  setLog('💥 Double actif – prochain coup = 10 cases !');
-  renderGameState(state);
+  setLog('💣 MINES actif – joue une case pour piéger toute la zone !');renderGameState(state);
 }
 async function useSkip(){
   const{data}=await supabaseClient.from('rooms').select('state').eq('id',roomId).single();
-  if(!data) return;
-  const state=data.state;
-  const p=myPlayerNum;
+  if(!data) return;const state=data.state;const p=myPlayerNum;
   const pb=state.players[p].bonuses.skip;
   if(!pb.u||pb.used) return;
   const currentP=state.turnOrder[state.turnIdx%state.turnOrder.length];
-  if(currentP===p) return; // can't skip yourself
-  pb.used=true;
-  // Incrémenter immédiatement le turnIdx pour sauter le tour EN COURS
-state.turnIdx++;
-state.lastSkippedPlayer=currentP;
-// Si par hasard le suivant est aussi skip, gérer la queue
-state.skipQueue=state.skipQueue||{};
+  if(currentP===p) return;
+  pb.used=true;state.turnIdx++;state.lastSkippedPlayer=currentP;
+  if(!state.skipQueue) state.skipQueue={};
   await supabaseClient.from('rooms').update({state}).eq('id',roomId);
-  banner(`${PNAMES[currentP]}\nTOUR ANNULÉ !`,'var(--text)','var(--p1)');
-  renderGameState(state);
+  banner(`${PNAMES[currentP]}\nTOUR ANNULÉ !`,'var(--text)','var(--p1)');renderGameState(state);
 }
 
 // ════════════════════════════════════════
 //  BONUS CARDS UI
 // ════════════════════════════════════════
-function renderBonusCards(state, p, isMyTurn){
-  const pl=state.players[p];
-  if(!pl) return;
-  const row=document.getElementById('bonus-row'); row.innerHTML='';
+function renderBonusCards(state,p,isMyTurn){
+  const pl=state.players[p];if(!pl) return;
+  const row=document.getElementById('bonus-row');row.innerHTML='';
   const currentP=state.turnOrder[state.turnIdx%state.turnOrder.length];
-
   const meta=[
-    {id:'skip',  thresh:'10+', name:'Zapper un tour',   fn:'useSkip()'},
-    {id:'block', thresh:'20+', name:'Bloquer les cases', fn:'useBlock()'},
-    {id:'double',thresh:'30+', name:'×2 cases (10)',     fn:'useDouble()'}
+    {id:'skip',  thresh:'10+',name:'Zapper un tour',   fn:'useSkip()'},
+    {id:'block', thresh:'20+',name:'Bloquer les cases', fn:'useBlock()'},
+    {id:'mine',  thresh:'30+',name:'Poser des mines',   fn:'useMine()'}
   ];
-
   for(const m of meta){
     const b=pl.bonuses[m.id];
     const card=document.createElement('div');
-
+    const isMine=m.id==='mine';
     if(b.used) card.className='bcard used-bonus';
-    else if(b.u) card.className=`bcard ready active-bonus ab${p}`;
+    else if(b.u) card.className=`bcard ready active-bonus ${isMine?'abmine':`ab${p}`}`;
     else card.className='bcard locked';
-
     let btnHtml='';
     if(m.id==='skip'){
-      // Skip available when it's NOT your turn
       const canSkip=b.u&&!b.used&&currentP!==p;
-      if(canSkip){
-        btnHtml=`<button class="bbtn bbtn-${p}" onclick="useSkip()">UTILISER</button>`;
-      } else if(b.u&&!b.used){
-        btnHtml=`<div class="skip-note">⚡ Dispo pendant le tour adverse</div>`;
-      } else {
-        btnHtml=`<div class="skip-note">—</div>`;
-      }
+      if(canSkip) btnHtml=`<button class="bbtn bbtn-${p}" onclick="useSkip()">UTILISER</button>`;
+      else if(b.u&&!b.used) btnHtml=`<div class="skip-note">⚡ Dispo pendant le tour adverse</div>`;
+      else btnHtml=`<div class="skip-note">—</div>`;
     } else {
       const canUse=isMyTurn&&b.u&&!b.used&&!b.act;
       const disabled=canUse?'':'disabled';
       const label=b.act?'ACTIF ✓':'UTILISER';
-      btnHtml=`<button class="bbtn bbtn-${p}" onclick="${m.fn}" ${disabled}>${label}</button>`;
+      const btnCls=isMine?'bbtn bbtn-mine':`bbtn bbtn-${p}`;
+      btnHtml=`<button class="${btnCls}" onclick="${m.fn}" ${disabled}>${label}</button>`;
     }
-
-    const dotHtml=`<div class="bcard-dot ${b.u&&!b.used?`lit${p}`:b.used?'used-dot':''}"></div>`;
+    const dotCls=b.u&&!b.used?(isMine?'litmine':`lit${p}`):b.used?'used-dot':'';
+    let extraHtml='';
+    if(isMine&&b.u&&!b.used){
+      extraHtml=`<div class="mine-desc">Adversaire touche → -5 pts<br>Case exacte → esquive</div>`;
+    }
     card.innerHTML=`
       <div class="bcard-thresh">${m.thresh}</div>
       <div class="bcard-name">${m.name}</div>
-      ${dotHtml}
-      ${btnHtml}
+      <div class="bcard-dot ${dotCls}"></div>
+      ${btnHtml}${extraHtml}
     `;
     row.appendChild(card);
   }
@@ -1174,7 +1172,7 @@ function endGame(state){
   const title=document.getElementById('end-title');
   if(tie){title.style.color='#ff9900';title.textContent='ÉGALITÉ !';}
   else{title.style.color=PCOL[winner];title.textContent=`${PNAMES[winner]} GAGNE !`;}
-  const sc=document.getElementById('end-scores'); sc.innerHTML='';
+  const sc=document.getElementById('end-scores');sc.innerHTML='';
   const sorted=turnOrder.slice().sort((a,b)=>(state.players[b]||{score:0}).score-(state.players[a]||{score:0}).score);
   sorted.forEach((p,i)=>{
     const d=document.createElement('div');
@@ -1194,24 +1192,22 @@ function banner(text,textColor,borderColor){
   const d=document.createElement('div');
   d.className='flash-banner';
   d.style.cssText=`color:${textColor||'var(--text)'};border:2px solid ${borderColor||'var(--text)'}`;
-  d.textContent=text;
-  document.body.appendChild(d);
+  d.textContent=text;document.body.appendChild(d);
   setTimeout(()=>d.remove(),3500);
 }
 function setBadge(msg,cls){
   const b=document.getElementById('conn-badge');
-  b.textContent=msg; b.className='conn-badge'+(cls?` ${cls}`:'');
+  b.textContent=msg;b.className='conn-badge'+(cls?` ${cls}`:'');
 }
 
 // ════════════════════════════════════════
-//  AUTO-JOIN FROM URL PARAM
+//  AUTO-JOIN FROM URL
 // ════════════════════════════════════════
 window.addEventListener('load',()=>{
   const params=new URLSearchParams(location.search);
   const roomParam=params.get('room');
   if(roomParam){
     document.getElementById('join-input').value=roomParam.toUpperCase();
-    // Auto-trigger join after a tiny delay
     setTimeout(()=>joinRoom(),300);
   }
 });
